@@ -55,15 +55,18 @@ STR_CONFIG = {
 	-- recurso (comida, madera, oro, piedra) y "Todos" encima, a la altura de la
 	-- población. Valores medidos sobre una captura a 1080p con escala de
 	-- interfaz normal; si no cuadra con tu pantalla, ajusta:
-	--   margin      -> "izquierda,arriba,derecha,abajo" en píxeles
-	--   row_height  -> separación entre recursos
+	--   margin       -> "izquierda,arriba,derecha,abajo" en píxeles
+	--   row_height   -> separación entre recursos
+	--   button_size  -> lado de cada botón cuadrado
+	-- Botones cuadrados: verde y candado abierto = compartiendo; rojo y candado
+	-- cerrado = bloqueado. El de arriba (marco dorado) es "Todos".
 	ui = {
 		layout = "column",       -- column (junto a cada recurso) | row (en fila)
 		horizontal = "Left",     -- Left | Center | Right
 		vertical = "Bottom",     -- Top | Center | Bottom
-		margin = "198,0,0,16",
+		margin = "200,0,0,15",
 		row_height = 39,
-		button_width = 118,
+		button_size = 35,
 	},
 
 	-- Textos localizados de los avisos ("$GUID:fila" del .locdb del mod).

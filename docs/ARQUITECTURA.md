@@ -79,13 +79,18 @@ Clic (solo en el ordenador de quien pulsa)
 
 [str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` una columna de 5 botones:
 
-- Uno general arriba: "Bloquear todo" o "Compartir todo" (muestra lo que hará al pulsarlo).
-- Uno por recurso: candado oficial abierto (`images/fe/fe_unlocked_icon.png`) y "Compartido" en verde, o candado cerrado (`images/fe/fe_locked_icon.png`) y "Bloqueado" en naranja.
+Son **cuadrados** (`STR_CONFIG.ui.button_size`, 35 por defecto):
+
+- Uno general arriba, con marco dorado: "Bloquear todo" o "Compartir todo". El candado muestra lo que hará al pulsarlo.
+- Uno por recurso:
+  - compartiendo: marco y fondo verdes con el candado oficial abierto (`images/fe/fe_unlocked_icon.png`);
+  - bloqueado: marco y fondo rojos con el candado cerrado (`images/fe/fe_locked_icon.png`).
+- El texto ("Compartido", "Bloqueado"…) sale como `ToolTip` al pasar el ratón.
 
 Cada botón es un `Grid` con dos capas:
 
-1. Un `Button` con el estilo oficial `PrimaryRaisedTextButton` y `Content=""`: pone el fondo, el efecto al pasar el ratón y recibe el clic.
-2. Encima, un `StackPanel` con `IsHitTestVisible="False"`, para que el clic llegue al botón. Contiene la `Image` del candado y un `TextBlock` con el estilo oficial `HUDGray80BodyTextBlock14ptStyle` y el color enlazado.
+1. Un `Button` con el estilo oficial `PrimaryRaisedTextButton` y `Content=""`: pone el fondo, el efecto al pasar el ratón, el `ToolTip` y recibe el clic.
+2. Encima, un `Border` con `IsHitTestVisible="False"` (para que el clic llegue al botón), con `BorderBrush` y `Background` enlazados al color del estado y la `Image` del candado centrada.
 
 Se hace así porque la plantilla de `PrimaryRaisedTextButton` solo dibuja `Content` como texto (en mayúsculas y recortado) e ignora imágenes. Por eso la primera versión salía vacía o con «BLOQUE...».
 

@@ -17,7 +17,9 @@
 -- Por qué el contenido va ENCIMA del botón y no dentro: el estilo oficial
 -- PrimaryRaisedTextButton solo dibuja texto (en mayúsculas y recortado) e
 -- ignora imágenes. Así que el botón pone el fondo y el clic, y encima va un
--- panel propio (sin capturar el ratón) con el icono oficial de candado y el texto.
+-- marco propio (sin capturar el ratón) con el color del estado y el candado
+-- oficial: verde y abierto = compartiendo; rojo y cerrado = bloqueado.
+-- Los botones son cuadrados; el texto sale al pasar el ratón.
 --
 -- Un clic es LOCAL: se envía por red con Network_CallEvent y el cambio real se
 -- aplica en STR_OnLockToggleNtw (str_main.scar), en todos los clientes a la vez.
@@ -36,51 +38,60 @@ STR_UI = {
 	-- Iconos oficiales del juego (candado abierto / cerrado).
 	icon_shared = "pack://application:,,,/WPFGUI;component/images/fe/fe_unlocked_icon.png",
 	icon_locked = "pack://application:,,,/WPFGUI;component/images/fe/fe_locked_icon.png",
+	-- Texto que sale al pasar el ratón (el botón ya no lleva texto).
 	text_shared = "Compartido",
 	text_locked = "Bloqueado",
 	text_lock_all = "Bloquear todo",
 	text_unlock_all = "Compartir todo",
-	color_shared = "#FFB8E07A",
-	color_locked = "#FFF0A04B",
-	color_all = "#FFFFFFFF",
+	-- Estado a simple vista: borde y fondo verdes = compartiendo; rojos = bloqueado.
+	color_shared = "#FF7FD957",
+	color_locked = "#FFE8553A",
+	color_all = "#FFE8C25A",
+	tint_shared = "#5530A040",
+	tint_locked = "#66C03020",
+	tint_all = "#00000000",
 }
 
 local function STR_UI_Cfg()
 	local cfg = STR_CONFIG.ui or {}
+	local row_height = cfg.row_height or 39
 	return {
 		layout = cfg.layout or "column",
 		horizontal = cfg.horizontal or "Left",
 		vertical = cfg.vertical or "Bottom",
 		margin = cfg.margin or "198,0,0,16",
-		row_height = cfg.row_height or 39,
-		button_width = cfg.button_width or 118,
+		row_height = row_height,
+		-- Lado del botón cuadrado. Por defecto, un poco menos que la fila.
+		button_size = cfg.button_size or (row_height - 4),
 	}
 end
 
--- Un botón: el Button oficial de fondo (vacío) y encima icono + texto.
+-- Un botón cuadrado: el Button oficial de fondo (vacío, recibe el clic y
+-- muestra el texto al pasar el ratón) y encima un marco con el color del
+-- estado y el candado oficial abierto o cerrado.
 --   parameter -> "1".."4" o "all"
---   key       -> prefijo de los datos: <key>_icon, <key>_text, <key>_color
+--   key       -> prefijo de los datos: <key>_icon, <key>_text, <key>_color, <key>_tint
 local function STR_UI_Button(parameter, key, cfg, last)
-	local w = cfg.button_width
-	local h = cfg.row_height - 2
+	local size = cfg.button_size
+	local gap = cfg.row_height - size
 	local margin
 	if cfg.layout == "column" then
-		margin = (parameter == "all") and "0,0,0,6" or "0,0,0,2"
+		margin = (parameter == "all") and ("0,0,0," .. (gap + 4)) or ("0,0,0," .. gap)
 	else
-		margin = last and "0,0,0,0" or "0,0,4,0"
+		margin = last and "0,0,0,0" or ("0,0," .. gap .. ",0")
 	end
+	local icon = math.floor(size * 0.65)
 	local b = "[" .. key
-	return '\n\t<Grid Width="' .. w .. '" Height="' .. h .. '" Margin="' .. margin .. '">'
+	return '\n\t<Grid Width="' .. size .. '" Height="' .. size .. '" Margin="' .. margin .. '">'
 		.. '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" MinHeight="0" MinWidth="0"'
 		.. ' Padding="0" Content="" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"'
+		.. ' ToolTip="{Binding ' .. b .. '_text]}"'
 		.. ' Command="{Binding [click]}" CommandParameter="' .. parameter .. '" />'
-		.. '\n\t\t<StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left"'
-		.. ' Margin="6,0,4,0" IsHitTestVisible="False">'
-		.. '\n\t\t\t<Image Source="{Binding ' .. b .. '_icon]}" Width="20" Height="20" Margin="0,0,6,0" />'
-		.. '\n\t\t\t<TextBlock Text="{Binding ' .. b .. '_text]}" Foreground="{Binding ' .. b .. '_color]}"'
-		.. ' Style="{StaticResource HUDGray80BodyTextBlock14ptStyle}" Effect="{StaticResource DropShadowTextStyle}"'
-		.. ' VerticalAlignment="Center" />'
-		.. '\n\t\t</StackPanel>'
+		.. '\n\t\t<Border IsHitTestVisible="False" BorderThickness="2" CornerRadius="2"'
+		.. ' BorderBrush="{Binding ' .. b .. '_color]}" Background="{Binding ' .. b .. '_tint]}">'
+		.. '\n\t\t\t<Image Source="{Binding ' .. b .. '_icon]}" Width="' .. icon .. '" Height="' .. icon .. '"'
+		.. ' HorizontalAlignment="Center" VerticalAlignment="Center" />'
+		.. '\n\t\t</Border>'
 		.. '\n\t</Grid>'
 end
 
@@ -118,12 +129,14 @@ function STR_UI_BuildData(pool, member)
 		data[key .. "_icon"] = sharing and STR_UI.icon_shared or STR_UI.icon_locked
 		data[key .. "_text"] = sharing and STR_UI.text_shared or STR_UI.text_locked
 		data[key .. "_color"] = sharing and STR_UI.color_shared or STR_UI.color_locked
+		data[key .. "_tint"] = sharing and STR_UI.tint_shared or STR_UI.tint_locked
 	end
 	local any = pool ~= nil and STR_Ledger_AnySharing(pool, member)
-	-- El botón general muestra lo que HARÁ al pulsarlo.
+	-- El botón general (marco dorado) muestra lo que HARÁ al pulsarlo.
 	data.all_icon = any and STR_UI.icon_locked or STR_UI.icon_shared
 	data.all_text = any and STR_UI.text_lock_all or STR_UI.text_unlock_all
 	data.all_color = STR_UI.color_all
+	data.all_tint = STR_UI.tint_all
 	return data
 end
 

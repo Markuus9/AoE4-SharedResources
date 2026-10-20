@@ -31,22 +31,23 @@ La fuente está en [tools/imagen/mod.html](../tools/imagen/mod.html). La cabecer
 
 ### Colocar los botones junto a los recursos
 
-Por defecto es una **columna pegada a la derecha del recuadro de recursos** (abajo a la izquierda): "Bloquear todo" a la altura de la población y debajo un botón a la altura de comida, madera, oro y piedra. Las medidas salen de una captura a 1080p con la escala de interfaz normal. Si con tu resolución o escala no cuadra, edita `STR_CONFIG.ui` en [str_config.scar](../assets/scar/sharedteamresources/str_config.scar):
+Por defecto es una **columna de botones cuadrados pegada a la derecha del recuadro de recursos** (abajo a la izquierda): "Todos" (marco dorado) a la altura de la población y debajo un botón a la altura de comida, madera, oro y piedra. Verde y candado abierto = compartiendo; rojo y candado cerrado = bloqueado. Las medidas salen de una captura a 1080p con la escala de interfaz normal. Si con tu resolución o escala no cuadra, edita `STR_CONFIG.ui` en [str_config.scar](../assets/scar/sharedteamresources/str_config.scar):
 
 ```lua
 ui = {
 	layout = "column",       -- column (junto a cada recurso) | row (en fila)
 	horizontal = "Left",     -- Left | Center | Right
 	vertical = "Bottom",     -- Top | Center | Bottom
-	margin = "198,0,0,16",   -- izquierda, arriba, derecha, abajo (píxeles)
+	margin = "200,0,0,15",   -- izquierda, arriba, derecha, abajo (píxeles)
 	row_height = 39,         -- separación entre recursos
-	button_width = 118,
+	button_size = 35,        -- lado de cada botón cuadrado
 },
 ```
 
 - Columna demasiado a la izquierda/derecha: cambia el primer número de `margin`.
 - Botones desplazados hacia arriba/abajo respecto a los recursos: cambia el último número de `margin`.
 - Botones más juntos o separados que los recursos: cambia `row_height`.
+- Botones más grandes o más pequeños: cambia `button_size` (debe ser menor que `row_height`).
 
 Vuelve a compilar después de cada cambio. Si me mandas una captura, te calculo los valores.
 

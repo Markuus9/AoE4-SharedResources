@@ -20,8 +20,8 @@ Las victorias, la edad, la velocidad, el mapa y la diplomacia los gestiona el pr
 **En la partida**
 
 - Una reserva común por equipo. Todo lo que recolecta o gasta cualquiera de los que comparten sale de ella.
-- Una columna de botones **pegada al recuadro de recursos** (abajo a la izquierda), uno a la altura de cada recurso, con el **candado oficial del juego** (abierto o cerrado) y "Compartido" en verde o "Bloqueado" en naranja. Cada jugador ve y controla **solo su propio estado**.
-- Un botón **Bloquear todo / Compartir todo** para todos tus recursos a la vez.
+- Una columna de botones **pegada al recuadro de recursos** (abajo a la izquierda), con **botones cuadrados** a la altura de cada recurso. Verde con el candado abierto significa que compartes; rojo con el candado cerrado, que lo tienes bloqueado. El texto aparece al pasar el ratón. Cada jugador ve y controla **solo su propio estado**.
+- Un botón con marco dorado encima (**Bloquear todo / Compartir todo**) para todos tus recursos a la vez.
 - Al dejar de compartir, te llevas **tu parte según lo que aportaste**: lo recolectado menos lo gastado, incluidos los recursos iniciales. **Nunca más de lo que aportaste.** Si gastaste más de lo que aportaste, no te llevas nada.
 - Los demás siguen compartiendo lo que queda. Con 3 o 4 jugadores, si uno se sale, los otros siguen juntos.
 - Al volver a compartir, tu saldo se suma otra vez a la reserva.

@@ -470,15 +470,18 @@ test("UI: el panel se crea solo para el jugador local de la reserva", function()
 		ok(string.find(xaml, "{Binding [" .. k .. "_icon]}", 1, true), "binding icono " .. k)
 		ok(string.find(xaml, "{Binding [" .. k .. "_text]}", 1, true), "binding texto " .. k)
 		ok(string.find(xaml, "{Binding [" .. k .. "_color]}", 1, true), "binding color " .. k)
+		ok(string.find(xaml, "{Binding [" .. k .. "_tint]}", 1, true), "binding fondo " .. k)
 	end
 	ok(not string.find(xaml, "]]", 1, true), "sin restos de cadenas Lua")
-	-- El estilo oficial solo pinta texto: el contenido va encima, sin capturar el clic.
+	-- El estilo oficial solo pinta texto: el estado va encima, sin capturar el clic.
 	local _, empty = string.gsub(xaml, 'Content=""', "")
 	local _, overlays = string.gsub(xaml, 'IsHitTestVisible="False"', "")
-	eq(empty, 5, "5 botones vacíos (fondo + clic)"); eq(overlays, 5, "5 capas de icono + texto encima")
-	ok(string.find(xaml, "HUDGray80BodyTextBlock14ptStyle", 1, true), "estilo de texto oficial")
+	eq(empty, 5, "5 botones vacíos (fondo + clic)"); eq(overlays, 5, "5 marcos de estado encima")
+	ok(string.find(xaml, 'ToolTip="{Binding [food_text]}"', 1, true), "el texto sale al pasar el ratón")
+	ok(not string.find(xaml, "<TextBlock", 1, true), "los botones ya no llevan texto")
 	local data = MOCK.ui.STR_LockUI.data
 	ok(data.food_icon == STR_UI.icon_shared, "candado abierto al compartir")
+	ok(data.food_color == STR_UI.color_shared and data.food_tint == STR_UI.tint_shared, "verde al compartir")
 	ok(string.find(STR_UI.icon_shared, "fe_unlocked_icon.png", 1, true), "icono oficial abierto")
 	ok(string.find(STR_UI.icon_locked, "fe_locked_icon.png", 1, true), "icono oficial cerrado")
 
@@ -491,8 +494,10 @@ test("UI: columna junto a los recursos (Todos arriba, luego comida-madera-oro-pi
 	start(coop(100, 100))
 	local xaml = MOCK.ui.STR_LockUI.xaml
 	ok(string.find(xaml, 'Orientation="Vertical" SnapsToDevicePixels', 1, true), "columna")
-	ok(string.find(xaml, 'Margin="198,0,0,16"', 1, true), "margen por defecto")
-	ok(string.find(xaml, 'Height="37"', 1, true), "alto de fila 39 - 2")
+	ok(string.find(xaml, 'Margin="200,0,0,15"', 1, true), "margen por defecto")
+	local _, squares = string.gsub(xaml, '<Grid Width="35" Height="35"', "")
+	eq(squares, 5, "5 botones cuadrados de 35")
+	ok(string.find(xaml, 'Margin="0,0,0,4"', 1, true), "separación hasta completar la fila de 39")
 	local order = {}
 	for p in string.gmatch(xaml, 'CommandParameter="([^"]+)"') do order[#order + 1] = p end
 	ok(table.concat(order, ",") == "all,1,2,3,4", "orden: " .. table.concat(order, ","))
@@ -514,7 +519,7 @@ test("UI: un clic viaja por la red y se aplica en el siguiente tick", function()
 	local data = MOCK.ui.STR_LockUI.data
 	ok(data.gold_text == "Bloqueado", "texto del botón")
 	ok(data.gold_icon == STR_UI.icon_locked, "candado cerrado")
-	ok(data.gold_color == STR_UI.color_locked, "color de bloqueado")
+	ok(data.gold_color == STR_UI.color_locked and data.gold_tint == STR_UI.tint_locked, "rojo al bloquear")
 	ok(data.food_text == "Compartido" and data.food_color == STR_UI.color_shared, "comida sigue compartida")
 	ok(data.all_text == "Bloquear todo", "botón general")
 	Mock_Click("all"); Mock_Tick()

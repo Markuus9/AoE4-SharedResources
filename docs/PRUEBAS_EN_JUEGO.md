@@ -29,9 +29,9 @@ Partida: tú + IA aliada contra IA.
 ## 2. Botones de bloqueo
 
 - [ ] La columna de botones aparece pegada a la derecha del recuadro de recursos, cada botón a la altura de su recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones-junto-a-los-recursos)).
-- [ ] Cada botón muestra un candado abierto y "Compartido" en verde; arriba, "Bloquear todo".
+- [ ] Los botones son cuadrados, verdes y con el candado abierto; el de arriba tiene marco dorado. Al pasar el ratón sale "Compartido" o "Bloquear todo".
 - [ ] Clic en oro:
-  - [ ] el candado se cierra y pone "Bloqueado" en naranja;
+  - [ ] el botón pasa a rojo con el candado cerrado;
   - [ ] aparece el aviso "… deja de compartir el oro y se queda con lo que aportó";
   - [ ] te quedas con lo que aportaste, no más.
 - [ ] Con el oro bloqueado, lo que recolectas no le llega al aliado y viceversa. Los demás recursos siguen compartidos.

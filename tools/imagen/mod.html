@@ -89,12 +89,22 @@
 
   <!-- iconos de recursos -->
   <g transform="translate(960,720)" filter="url(#shadow)">
-    <!-- comida: pierna -->
+    <!-- comida: muslo asado (carne arriba a la derecha, hueso abajo a la izquierda) -->
     <g transform="translate(-390,0)">
       <circle r="62" fill="#2a1d12" stroke="#c9a14a" stroke-width="4"/>
-      <ellipse cx="8" cy="-6" rx="34" ry="26" fill="#c2552f" transform="rotate(-35)"/>
-      <rect x="-34" y="18" width="34" height="11" rx="5" fill="#f1e2c4" transform="rotate(-35)"/>
-      <circle cx="-38" cy="40" r="9" fill="#f1e2c4"/><circle cx="-28" cy="47" r="9" fill="#f1e2c4"/>
+      <g transform="translate(2,-2) rotate(38)">
+        <!-- hueso -->
+        <rect x="-5" y="6" width="10" height="36" rx="4" fill="#efe3c8"/>
+        <circle cx="-7" cy="44" r="8" fill="#efe3c8"/>
+        <circle cx="7" cy="44" r="8" fill="#efe3c8"/>
+        <rect x="-2" y="8" width="3" height="32" rx="1.5" fill="#ffffff" opacity="0.5"/>
+        <!-- carne -->
+        <path d="M0 -42 C 25 -42 33 -16 26 2 C 20 16 11 20 0 20 C -11 20 -20 16 -26 2 C -33 -16 -25 -42 0 -42 Z" fill="#a9471f"/>
+        <path d="M0 -42 C 22 -42 29 -18 23 -1 C 16 12 8 15 0 15 C -9 15 -17 11 -22 -1 C -28 -18 -21 -42 0 -42 Z" fill="#c8612d"/>
+        <path d="M -15 -28 C -8 -35 7 -36 14 -28" fill="none" stroke="#f0a067" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+        <!-- borde de la carne junto al hueso -->
+        <ellipse cx="0" cy="18" rx="12" ry="5" fill="#8f3a18"/>
+      </g>
     </g>
     <!-- madera: troncos -->
     <g transform="translate(-130,0)">
