@@ -88,3 +88,11 @@
 87,,,Debug cue.,,,Depuración: panel de botones creado
 88,,,Debug cue.,,,Depuración: no se pudo crear el panel de botones
 89,,,Debug cue.,,,Depuración: los botones no están disponibles (sin eventos de red)
+90,,,Option name,,,Población máxima compartida
+91,,,Option tooltip,,,El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use
+92,,,Option name,,,Producción compartida
+93,,,Option tooltip,,,Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos
+94,,,Button tooltip.,,,Compartido: pulsa para dejar de compartirlo
+95,,,Button tooltip.,,,Bloqueado: pulsa para volver a compartirlo
+96,,,Button tooltip.,,,Bloquear todo
+97,,,Button tooltip.,,,Compartir todo

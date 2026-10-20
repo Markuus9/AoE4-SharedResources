@@ -120,6 +120,19 @@ function STR_UI_BuildXaml()
 		.. '\n</StackPanel>'
 end
 
+-- Texto localizado del CSV ("$GUID:fila") si el modo lo ha configurado; si no,
+-- el texto en español de STR_UI. Va dentro de pcall por si falla la localización.
+local function STR_UI_Text(kind, fallback)
+	local key = STR_Message(kind)
+	if key ~= nil and Loc_FormatText ~= nil then
+		local ok, text = pcall(Loc_FormatText, key)
+		if ok and text ~= nil then
+			return text
+		end
+	end
+	return fallback
+end
+
 -- Rellena la tabla de datos con el estado del jugador local.
 function STR_UI_BuildData(pool, member)
 	local data = STR_UI.data or { click = UI_CreateCommand("STR_UI_OnClick") }
@@ -127,14 +140,16 @@ function STR_UI_BuildData(pool, member)
 		local rt = STR_RESOURCE_TYPES[i]
 		local sharing = pool ~= nil and STR_Ledger_IsSharing(pool, member, rt)
 		data[key .. "_icon"] = sharing and STR_UI.icon_shared or STR_UI.icon_locked
-		data[key .. "_text"] = sharing and STR_UI.text_shared or STR_UI.text_locked
+		data[key .. "_text"] = sharing and STR_UI_Text("ui_shared", STR_UI.text_shared)
+			or STR_UI_Text("ui_locked", STR_UI.text_locked)
 		data[key .. "_color"] = sharing and STR_UI.color_shared or STR_UI.color_locked
 		data[key .. "_tint"] = sharing and STR_UI.tint_shared or STR_UI.tint_locked
 	end
 	local any = pool ~= nil and STR_Ledger_AnySharing(pool, member)
 	-- El botón general (marco dorado) muestra lo que HARÁ al pulsarlo.
 	data.all_icon = any and STR_UI.icon_locked or STR_UI.icon_shared
-	data.all_text = any and STR_UI.text_lock_all or STR_UI.text_unlock_all
+	data.all_text = any and STR_UI_Text("ui_lock_all", STR_UI.text_lock_all)
+		or STR_UI_Text("ui_unlock_all", STR_UI.text_unlock_all)
 	data.all_color = STR_UI.color_all
 	data.all_tint = STR_UI.tint_all
 	return data

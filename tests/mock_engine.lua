@@ -26,6 +26,7 @@ GE_ConstructionComplete = "GE_ConstructionComplete"
 GE_UpgradeComplete = "GE_UpgradeComplete"
 
 ECV_Queue = "ECV_Queue"
+CT_Personnel = "CT_Personnel"
 BA_VILLAGER = "BA_VILLAGER"
 FILTER_KEEP = "FILTER_KEEP"
 nothing = function() end
@@ -55,6 +56,9 @@ function Mock_Reset(spec, scar_root)
 	MOCK.set_calls = 0
 	MOCK.time = 0
 	MOCK.replay = false
+	MOCK.pop = {}
+	MOCK.entities = {}
+	MOCK.global_events_removed = {}
 	PLAYERS = {}
 	for i, p in ipairs(spec) do
 		-- En el juego los ids son userdata; aquí, tablas (también se comparan por identidad).
@@ -67,6 +71,14 @@ function Mock_Reset(spec, scar_root)
 		}
 		MOCK.team[id] = p.team
 		MOCK.human[id] = (p.human ~= false)
+		-- Población: usada, tope base (lo que fija Player_SetMaxCapPopulation) y
+		-- modificador que el motor suma encima (p. ej. una tecnología).
+		MOCK.pop[id] = { used = p.pop_used or 0, base = p.pop_max or 200, mod = p.pop_mod or 0 }
+		-- Edificios: centro urbano (con cola de producción) y una casa (sin cola).
+		MOCK.entities[id] = {
+			{ type = "town_center", pos = { x = 1, y = 2 }, production = true, shared = false },
+			{ type = "house", pos = { x = 5, y = 5 }, production = false, shared = false },
+		}
 		table.insert(PLAYERS, {
 			id = id,
 			index = i,
@@ -367,9 +379,40 @@ function UI_Remove(name)
 	MOCK.ui[name] = nil
 end
 
--- Entidades y unidades (solo lo necesario para los aldeanos extra)
+-- Población
+function Player_GetCurrentPopulation(id, cap) return MOCK.pop[id].used end
+function Player_GetMaxPopulationCap(id, cap) return MOCK.pop[id].base + MOCK.pop[id].mod end
+function Player_SetMaxCapPopulation(id, cap, value) MOCK.pop[id].base = value end
+
+-- Crea un edificio terminado para el jugador n y lanza GE_ConstructionComplete.
+function Mock_Build(n, type_name, has_queue)
+	local id = PLAYERS[n].id
+	local entity = { type = type_name, pos = { x = 0, y = 0 }, production = has_queue, shared = false }
+	table.insert(MOCK.entities[id], entity)
+	Mock_FireEvent(GE_ConstructionComplete, { player = id, entity = entity })
+	return entity
+end
+
+-- Entidades y unidades
 function Player_GetEntities(id)
-	return { owner = id, items = { { type = "town_center", pos = { x = 1, y = 2 } } } }
+	local items = {}
+	for i, e in ipairs(MOCK.entities[id] or {}) do items[i] = e end
+	return { owner = id, items = items }
+end
+function EGroup_ForEach(eg, fn)
+	for i, e in ipairs(eg.items) do
+		if fn(eg, i, e) then break end
+	end
+end
+function Entity_HasProductionQueue(e) return e.production == true end
+function Entity_SetSharedProductionQueue(e, shared) e.shared = shared end
+function Rule_RemoveGlobalEvent(fn)
+	table.insert(MOCK.global_events_removed, fn)
+	for event, list in pairs(MOCK.events) do
+		for i = #list, 1, -1 do
+			if list[i] == fn then table.remove(list, i) end
+		end
+	end
 end
 function EGroup_Filter(eg, type_name, mode)
 	local kept = {}

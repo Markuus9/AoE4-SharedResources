@@ -37,6 +37,21 @@ Marca la última columna cuando lo compruebes en el juego.
 | `UI_IsReplay()` | No mostrar botones en repeticiones | Doc oficial | [ ] |
 | `Player_GetDisplayName(id)` como parámetro de `Loc_FormatText` | Nombre en los avisos | Doc oficial + script oficial | [ ] |
 
+## Población máxima y producción compartidas
+
+| Función / valor | Uso | Fuente | ¿Probado? |
+|---|---|---|---|
+| `Player_GetCurrentPopulation(id, CT_Personnel)` | Población usada | Doc oficial + scripts oficiales | [ ] |
+| `Player_GetMaxPopulationCap(id, CT_Personnel)` | Tope efectivo (incluye modificadores) | Doc oficial | [ ] |
+| `Player_SetMaxCapPopulation(id, CT_Personnel, n)` | Fija el tope máximo (no la capacidad de las casas); los modificadores se suman encima, y el mod lo compensa | Doc oficial (`player.scar`) | [ ] |
+| `Entity_SetSharedProductionQueue(entity, true)` | "Producción compartida en un edificio: los aliados producen con SUS recursos" | Doc oficial | [ ] |
+| `Entity_HasProductionQueue(entity)` | Solo edificios con cola | Doc oficial + `standard_mode.scar` | [ ] |
+| `EGroup_ForEach(eg, f(grupo, índice, entidad))` | Recorrer edificios | Doc oficial | [ ] |
+| `GE_ConstructionComplete` con `context.player` y `context.entity` | Compartir edificios nuevos | `standard_mode.scar` | [ ] |
+| `Rule_RemoveGlobalEvent(f)` | Quitar el evento al acabar | Plantilla | [ ] |
+
+**Por verificar en el juego:** que al subir el tope por encima de 200, la capacidad de las casas pueda crecer hasta él sin llamar a `Player_SetMaxPopulation`. La documentación avisa de que "la capacidad actual no puede superar el tope", pero no dice si sube sola.
+
 ## Recursos y aldeanos iniciales
 
 | Función / valor | Uso | Fuente | ¿Probado? |

@@ -4,6 +4,11 @@
 	<CustomFields />
 	<Locales>
 		<Locale>
+			<DisplayName>English</DisplayName>
+			<EngineName i:nil="true" />
+			<Name>en</Name>
+		</Locale>
+		<Locale>
 			<DisplayName>Español</DisplayName>
 			<EngineName i:nil="true" />
 			<Name>es</Name>

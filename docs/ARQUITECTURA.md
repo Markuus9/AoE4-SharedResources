@@ -106,6 +106,36 @@ Cada jugador local ve **su** estado. El panel se actualiza con `UI_SetDataContex
 
 El eliminado sale de la reserva **sin** contar sus cambios del último tick, porque el motor puede vaciar sus recursos. Su aporte pasa al superviviente, que conserva el saldo común y la deuda pendiente.
 
+## Población máxima compartida ([str_team.scar](../assets/scar/sharedteamresources/str_team.scar))
+
+Al crear la reserva se guarda el tope inicial de cada miembro (`Player_GetMaxPopulationCap`, normalmente 200). En cada tick:
+
+```
+tope_equipo = Σ tope_inicial (de los miembros que quedan)
+libre       = max(tope_equipo − Σ usada, 0)
+tope_j      = usada_j + libre
+```
+
+- Si A usa 100 y B usa 50 (equipo 400), A puede llegar a 350 y B a 300. Cuando uno crece, el hueco del otro se reduce.
+- Solo se mueve el **tope** (`Player_SetMaxCapPopulation`); la capacidad de las casas sigue haciendo falta.
+- El motor suma modificadores encima del valor fijado. La primera vez se mide la diferencia entre lo fijado y lo efectivo, y luego se compensa.
+- Si un miembro es eliminado, su tope deja de contar y el superviviente vuelve a su propio tope.
+- Si dos producen a la vez la última unidad que cabe, el equipo puede pasarse por una unidad (como la deuda de recursos).
+
+## Producción compartida ([str_team.scar](../assets/scar/sharedteamresources/str_team.scar))
+
+`Entity_SetSharedProductionQueue(edificio, true)` en cada edificio con cola de producción (`Entity_HasProductionQueue`) de los miembros de una reserva:
+
+- al empezar, recorriendo `Player_GetEntities` con `EGroup_ForEach`;
+- en cada `GE_ConstructionComplete` de un miembro;
+- con un repaso cada 15 s, para edificios que aparezcan de otra forma.
+
+Los aliados producen pagando con *sus* recursos; con la reserva, son los comunes (o los propios si los tienen bloqueados).
+
+## Idiomas
+
+`assets/locdb/SharedTeamResources_en.csv` y `_es.csv` tienen la misma numeración de filas (97). El `.locdb` registra los dos idiomas, con el inglés primero, como en AGS. Todos los textos del lobby, de los avisos y de los botones (al pasar el ratón) salen de ahí. [tools/genrdo.js](../tools/genrdo.js) genera los dos CSV: el español está en el propio script y el inglés en [tools/locale_en.js](../tools/locale_en.js), y el script comprueba que coinciden fila a fila.
+
 ## Formación de reservas
 
 - Una reserva por equipo (`Player_GetTeam`), con entre 2 y `max_players_per_pool` miembros elegibles (opción del lobby "Jugadores por reserva": 2, 3 o 4; por defecto 4). La contabilidad y el reparto al bloquear funcionan igual con cualquier número.

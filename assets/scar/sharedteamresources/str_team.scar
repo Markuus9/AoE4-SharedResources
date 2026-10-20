@@ -1,0 +1,173 @@
+---------------------------------------------------------------------------------------------------
+-- SharedResources - Población máxima y producción compartidas
+--
+-- Dos extras opcionales para los miembros de cada reserva (casillas del lobby
+-- "Población máxima compartida" y "Producción compartida"):
+--
+-- 1. POBLACIÓN MÁXIMA COMPARTIDA (el tope de 200, no la capacidad de las casas)
+--    El equipo suma el tope de todos: 2 jugadores con 200 = 400. En cada tick:
+--      libre     = tope_equipo - suma(población usada)
+--      tope_j    = usada_j + libre
+--    Así cada uno puede crecer hasta donde los demás no llegan: si uno usa 100,
+--    el otro puede llegar a 300. Las casas siguen haciendo falta: esto solo
+--    mueve el tope máximo (Player_SetMaxCapPopulation), no la capacidad actual.
+--    Si dos jugadores producen a la vez la última unidad que cabe, el equipo
+--    puede pasarse en esa unidad (igual que la deuda de recursos).
+--
+-- 2. PRODUCCIÓN COMPARTIDA
+--    Los edificios con cola de producción de cada miembro se marcan con
+--    Entity_SetSharedProductionQueue: los aliados pueden producir e investigar
+--    en ellos pagando con SUS recursos (que, con la reserva, son los comunes).
+--    Se aplica al empezar, al terminar cada construcción y con un repaso
+--    periódico para los edificios que aparezcan de otra forma.
+--
+-- Todo se ejecuta dentro de la simulación (reglas y eventos): determinista.
+---------------------------------------------------------------------------------------------------
+
+STR_TEAM = {
+	production_rule_interval = 15,   -- segundos entre repasos de edificios
+	production_started = false,
+}
+
+---------------------------------------------------------------------------------------------------
+-- Población máxima compartida
+---------------------------------------------------------------------------------------------------
+
+-- Guarda el tope inicial de cada miembro. Se llama al crear la reserva.
+function STR_Population_Init(pool)
+	pool.pop = { base = {}, offset = {} }
+	for _, id in ipairs(pool.members) do
+		pool.pop.base[id] = Player_GetMaxPopulationCap(id, CT_Personnel)
+		pool.pop.offset[id] = nil   -- diferencia entre lo que fijamos y lo efectivo (modificadores)
+	end
+end
+
+-- Tope del equipo: suma de los topes iniciales de los miembros que quedan.
+function STR_Population_TeamMax(pool)
+	local total = 0
+	for _, id in ipairs(pool.members) do
+		total = total + (pool.pop.base[id] or 0)
+	end
+	return total
+end
+
+-- Calcula el tope que debe tener cada miembro (lógica pura, testeable).
+--   used = { [id] = población usada }
+-- Devuelve { [id] = tope }.
+function STR_Population_Targets(pool, used)
+	local team_max = STR_Population_TeamMax(pool)
+	local total_used = 0
+	for _, id in ipairs(pool.members) do
+		total_used = total_used + (used[id] or 0)
+	end
+	local free = team_max - total_used
+	if free < 0 then
+		free = 0
+	end
+	local targets = {}
+	for _, id in ipairs(pool.members) do
+		targets[id] = math.floor((used[id] or 0) + free)
+	end
+	return targets
+end
+
+-- Fija el tope efectivo de un jugador. Player_SetMaxCapPopulation aplica los
+-- modificadores encima, así que se mide la diferencia la primera vez y se
+-- compensa en las siguientes.
+local function STR_Population_Apply(pool, id, target)
+	local offset = pool.pop.offset[id] or 0
+	local value = target - offset
+	Player_SetMaxCapPopulation(id, CT_Personnel, value)
+	local effective = Player_GetMaxPopulationCap(id, CT_Personnel)
+	pool.pop.offset[id] = effective - value
+	if effective ~= target and pool.pop.offset[id] ~= offset then
+		-- Había modificadores que no conocíamos: se corrige una vez más.
+		value = target - pool.pop.offset[id]
+		Player_SetMaxCapPopulation(id, CT_Personnel, value)
+	end
+end
+
+function STR_Population_Sync(pool)
+	if pool.pop == nil or #pool.members == 0 then
+		return
+	end
+	local used = {}
+	for _, id in ipairs(pool.members) do
+		used[id] = Player_GetCurrentPopulation(id, CT_Personnel)
+	end
+	local targets = STR_Population_Targets(pool, used)
+	for _, id in ipairs(pool.members) do
+		if Player_GetMaxPopulationCap(id, CT_Personnel) ~= targets[id] then
+			STR_Population_Apply(pool, id, targets[id])
+		end
+	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Producción compartida
+---------------------------------------------------------------------------------------------------
+
+local function STR_Production_ShareEntity(entity)
+	if entity ~= nil and Entity_HasProductionQueue(entity) then
+		Entity_SetSharedProductionQueue(entity, true)
+		return true
+	end
+	return false
+end
+
+-- Marca todos los edificios con cola de producción de un jugador.
+function STR_Production_SharePlayer(player_id)
+	local count = 0
+	local eg = Player_GetEntities(player_id)
+	EGroup_ForEach(eg, function(group, index, entity)
+		if STR_Production_ShareEntity(entity) then
+			count = count + 1
+		end
+		return false
+	end)
+	return count
+end
+
+function STR_Production_ShareAll()
+	for _, pool in ipairs(STR_STATE.pools) do
+		for _, id in ipairs(pool.members) do
+			STR_Production_SharePlayer(id)
+		end
+	end
+end
+
+function STR_Production_Start()
+	if STR_TEAM.production_started then
+		return
+	end
+	STR_TEAM.production_started = true
+	STR_Production_ShareAll()
+	Rule_AddGlobalEvent(STR_Production_OnConstructionComplete, GE_ConstructionComplete)
+	Rule_AddInterval(STR_Production_ShareAll, STR_TEAM.production_rule_interval)
+	STR_LogEvent("Producción compartida activada")
+end
+
+function STR_Production_Stop()
+	if not STR_TEAM.production_started then
+		return
+	end
+	if Rule_RemoveGlobalEvent ~= nil then
+		Rule_RemoveGlobalEvent(STR_Production_OnConstructionComplete)
+	end
+	if Rule_Exists(STR_Production_ShareAll) then
+		Rule_Remove(STR_Production_ShareAll)
+	end
+	STR_TEAM.production_started = false
+end
+
+-- Al terminar una construcción de un miembro de una reserva, se comparte.
+function STR_Production_OnConstructionComplete(context)
+	if context == nil or context.player == nil then
+		return
+	end
+	local player = Core_GetPlayersTableEntry(context.player)
+	if player == nil or STR_STATE.pool_of[player.id] == nil then
+		return
+	end
+	STR_Production_ShareEntity(context.entity)
+end

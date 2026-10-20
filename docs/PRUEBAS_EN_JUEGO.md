@@ -10,7 +10,11 @@ Partida: tú + IA aliada contra IA.
 
 - [ ] Compila sin errores (*Build → Build Mod*).
 - [ ] Aparece **Shared Resources (Estándar)** con la imagen nueva y su descripción.
-- [ ] Se ven las cuatro secciones de opciones con sus textos en español.
+- [ ] Se ven las cuatro secciones de opciones con sus textos en español; con el juego en inglés, en inglés.
+- [ ] En *Recursos compartidos* aparecen las casillas **Población máxima compartida** y **Producción compartida**, marcadas.
+- [ ] **Población máxima compartida** (tú + IA aliada): tu tope pasa de 200 a más cuando la IA tiene hueco libre (mira el contador de población al llegar a 200).
+- [ ] **Producción compartida:** selecciona un cuartel o el centro urbano de tu aliado IA y comprueba que puedes producir en él.
+- [ ] Con las dos casillas desmarcadas, todo funciona como en el estándar.
 - [ ] Con "Avisos de depuración" activado, al empezar aparece "reserva creada con N jugadores" y "panel de botones creado".
 - [ ] Con 3 jugadores en tu equipo y "Jugadores por reserva" en *Hasta 2*, el aviso explica que no comparte; en *Hasta 3* o *Hasta 4*, comparte.
 - [ ] "Incluir IA aliada" en *no*: tus IA aliadas dejan de compartir.

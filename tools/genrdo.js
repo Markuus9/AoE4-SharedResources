@@ -146,7 +146,17 @@ const LATE_ROWS = [
   ['Debug cue.', 'Depuración: panel de botones creado'],
   ['Debug cue.', 'Depuración: no se pudo crear el panel de botones'],
   ['Debug cue.', 'Depuración: los botones no están disponibles (sin eventos de red)'],
+  // 90+: población y producción compartidas, y textos de los botones
+  ['Option name', 'Población máxima compartida'],
+  ['Option tooltip', 'El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use'],
+  ['Option name', 'Producción compartida'],
+  ['Option tooltip', 'Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos'],
+  ['Button tooltip.', 'Compartido: pulsa para dejar de compartirlo'],
+  ['Button tooltip.', 'Bloqueado: pulsa para volver a compartirlo'],
+  ['Button tooltip.', 'Bloquear todo'],
+  ['Button tooltip.', 'Compartir todo'],
 ];
+LATE.POP_NAME = 90; LATE.POP_TIP = 91; LATE.PROD_NAME = 92; LATE.PROD_TIP = 93;
 const secShared = section('shared_section', SECTION_SHARED, true, [
   { key: 'shared_mode', nameRow: OPT_SHARED, tipRow: OPT_SHARED_TIP, items: [['shared_on', ON, ON_S], ['shared_off', OFF, OFF_S]] },
   { key: 'shared_lock_buttons', def: true, name: 'Botones de bloqueo', tip: 'Muestra en partida un botón por recurso para dejar de compartirlo y otro para todos' },
@@ -154,6 +164,8 @@ const secShared = section('shared_section', SECTION_SHARED, true, [
     items: [['shared_pool_2', LATE.POOL_2], ['shared_pool_3', LATE.POOL_3], ['shared_pool_4', LATE.POOL_4]] },
   { key: 'shared_ai_allies', def: true, nameRow: LATE.AI_NAME, tipRow: LATE.AI_TIP },
   { key: 'shared_debug', def: true, nameRow: LATE.DEBUG_NAME, tipRow: LATE.DEBUG_TIP },
+  { key: 'shared_population', def: true, nameRow: LATE.POP_NAME, tipRow: LATE.POP_TIP },
+  { key: 'shared_production', def: true, nameRow: LATE.PROD_NAME, tipRow: LATE.PROD_TIP },
 ]);
 const secStart = section('section_starting_conditions', row('Condiciones de inicio', 'Lobby section.'), false, [
   { key: 'option_start_age', name: 'Edad inicial', tip: 'Edad con la que empiezan todos los jugadores',
@@ -175,7 +187,7 @@ const secDip = section('section_diplomacy', row('Diplomacia', 'Lobby section.'),
 const sections = [secWin, secShared, secStart, secDip];
 if (rows.length !== 72) throw new Error('filas antes de las tardías: ' + rows.length);
 LATE_ROWS.forEach(function (r) { row(r[1], r[0]); });
-if (rows.length !== 89) throw new Error('filas totales: ' + rows.length);
+if (rows.length !== 97) throw new Error('filas totales: ' + rows.length);
 
 const optionsXml =
   T(2) + '<DataProperty Name="m_optionsUIDescriptor" Type="Object">\n' +
@@ -195,6 +207,14 @@ fs.writeFileSync(out + '/SharedTeamResources.rdo', rdo);
 const csv = '﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text\n' +
   rows.map(function (r, k) { return (k + 1) + ',,,' + r[0] + ',,,' + r[1]; }).join('\n') + '\n';
 fs.writeFileSync(out + '/SharedTeamResources_es.csv', csv);
+
+// --- Inglés: misma numeración de filas ---
+const EN = require('./locale_en.js');
+if (EN.length !== rows.length) throw new Error('inglés: ' + EN.length + ' filas, español: ' + rows.length);
+EN.forEach(function (t, k) { if (/[,"]/.test(t)) throw new Error('coma o comillas en inglés fila ' + (k + 1) + ': ' + t); });
+const csvEn = '﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text\n' +
+  rows.map(function (r, k) { return (k + 1) + ',,,' + r[0] + ',,,' + EN[k]; }).join('\n') + '\n';
+fs.writeFileSync(out + '/SharedTeamResources_en.csv', csvEn);
 
 // Validación
 const st = []; let ok = true; const re = /<(\/?)(DataObject|DataProperty|DataValue|DataWarehouse)\b[^>]*?(\/?)>/g; let m;

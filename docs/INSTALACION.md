@@ -63,7 +63,7 @@ Después: *Multijugador → Personalizada → Crear partida*. Poneos los dos en 
 ## 4. Publicar
 
 1. Comprueba que `assets/mod.png` es la imagen nueva.
-2. El nombre (**Shared Resources**) y la descripción salen de las filas 1 y 2 de `assets/locdb/SharedTeamResources_es.csv`.
+2. El nombre (**Shared Resources**) y la descripción salen de las filas 1 y 2 de `assets/locdb/SharedTeamResources_en.csv` y `_es.csv` (el juego usa el de su idioma).
 3. Compila y publica desde el juego: *Mods → Mis mods*.
 
 ## 5. Leer el log

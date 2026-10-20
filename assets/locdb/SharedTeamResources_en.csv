@@ -1,0 +1,98 @@
+﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text
+1,,,Mod name.,,,Shared Resources
+2,,,Mod description.,,,Standard mode where allies share food - wood - gold and stone. You can lock each resource at any time.
+3,,,Game mode name.,,,Shared Resources (Standard)
+4,,,Lobby section.,,,Shared resources
+5,,,Lobby option name.,,,Shared resources
+6,,,Lobby option tooltip.,,,If enabled the allies of each team share a single resource pool
+7,,,Option item: on.,,,Enabled
+8,,,Option item: off.,,,Disabled
+9,,,Option item summary: on.,,,Allies share all their resources
+10,,,Option item summary: off.,,,Each player keeps their own resources
+11,,,Event cue. %1AMOUNT% = debt.,,,Simultaneous spending: the team owes %1AMOUNT% food
+12,,,Event cue. %1AMOUNT% = debt.,,,Simultaneous spending: the team owes %1AMOUNT% wood
+13,,,Event cue. %1AMOUNT% = debt.,,,Simultaneous spending: the team owes %1AMOUNT% gold
+14,,,Event cue. %1AMOUNT% = debt.,,,Simultaneous spending: the team owes %1AMOUNT% stone
+15,,,Event cue at start.,,,Shared resources enabled with your ally
+16,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% stops sharing food and keeps their contribution
+17,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% stops sharing wood and keeps their contribution
+18,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% stops sharing gold and keeps their contribution
+19,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% stops sharing stone and keeps their contribution
+20,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% shares food again
+21,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% shares wood again
+22,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% shares gold again
+23,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% shares stone again
+24,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% stops sharing all their resources
+25,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% shares all their resources again
+26,,,Lobby section.,,,Win conditions
+27,,,Option name,,,Landmarks
+28,,,Option tooltip,,,The team that destroys all enemy landmarks wins
+29,,,Option name,,,Wonder
+30,,,Option tooltip,,,The team that keeps a wonder standing for the required time wins
+31,,,Option name,,,Sacred sites
+32,,,Option tooltip,,,The team that holds all sacred sites for the required time wins
+33,,,Option name,,,Regicide
+34,,,Option tooltip,,,Each player has a king: if the king dies the player loses
+35,,,Option name,,,Lock buttons
+36,,,Option tooltip,,,Shows a button per resource in game to stop sharing it and another one for all
+37,,,Lobby section.,,,Starting conditions
+38,,,Option name,,,Starting age
+39,,,Option tooltip,,,Age every player starts in
+40,,,Option item,,,Dark Age
+41,,,Option item,,,Feudal Age
+42,,,Option item,,,Castle Age
+43,,,Option item,,,Imperial Age
+44,,,Option name,,,Starting resources
+45,,,Option tooltip,,,Resources each player starts with (food / wood / gold / stone)
+46,,,Option item,,,Standard
+47,,,Option item,,,Medium: 1000 / 1000 / 600 / 400
+48,,,Option item,,,High: 3000 / 3000 / 2000 / 1500
+49,,,Option item,,,Very high: 10000 / 10000 / 7500 / 5000
+50,,,Option name,,,Extra villagers
+51,,,Option tooltip,,,Additional villagers next to the town center at the start
+52,,,Option item,,,None
+53,,,Option item,,,+6 villagers
+54,,,Option item,,,+12 villagers
+55,,,Option item,,,+20 villagers
+56,,,Option name,,,Economy speed
+57,,,Option tooltip,,,Multiplies gathering - construction - production and research speed
+58,,,Option item,,,Normal
+59,,,Option item,,,x2
+60,,,Option item,,,x3
+61,,,Option name,,,Map
+62,,,Option tooltip,,,How the fog of war starts
+63,,,Option item,,,Normal
+64,,,Option item,,,Explored
+65,,,Option item,,,Revealed
+66,,,Option name,,,Show score
+67,,,Option tooltip,,,Shows the real score of every player
+68,,,Lobby section.,,,Diplomacy
+69,,,Option name,,,Locked teams
+70,,,Option tooltip,,,Alliances cannot be changed during the match
+71,,,Option name,,,Tributes
+72,,,Option tooltip,,,Allows sending resources to other players
+73,,,Option name,,,Players per pool
+74,,,Option tooltip,,,Maximum number of players of the same team who share the pool
+75,,,Option item,,,Up to 2
+76,,,Option item,,,Up to 3
+77,,,Option item,,,Up to 4
+78,,,Option name,,,Include allied AI
+79,,,Option tooltip,,,AI players on your team also share the pool (teams made only of AI never share)
+80,,,Option name,,,Debug notices
+81,,,Option tooltip,,,Shows on screen why the pool is or is not created and the state of the buttons
+82,,,Debug cue. %1COUNT% = players.,,,Debug: pool created with %1COUNT% players of your team
+83,,,Debug cue. %1COUNT% %2MAX%.,,,Debug: your team does not share because it has %1COUNT% players and the maximum is %2MAX%
+84,,,Debug cue. %1COUNT% = players.,,,Debug: your team does not share because there is only %1COUNT% eligible player (check Include allied AI)
+85,,,Debug cue.,,,Debug: shared resources are disabled in the lobby
+86,,,Debug cue.,,,Debug: you are not in any team that shares resources
+87,,,Debug cue.,,,Debug: lock button panel created
+88,,,Debug cue.,,,Debug: the lock button panel could not be created
+89,,,Debug cue.,,,Debug: the buttons are not available (no network events)
+90,,,Option name,,,Shared max population
+91,,,Option tooltip,,,The team adds up its max population (for example 400 for two) and each player can use what the others do not
+92,,,Option name,,,Shared production
+93,,,Option tooltip,,,Allies can produce units and research in your buildings paying with their own resources
+94,,,Button tooltip.,,,Shared: click to stop sharing it
+95,,,Button tooltip.,,,Locked: click to share it again
+96,,,Button tooltip.,,,Lock all
+97,,,Button tooltip.,,,Share all

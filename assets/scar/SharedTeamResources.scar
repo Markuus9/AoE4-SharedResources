@@ -111,12 +111,20 @@ function STRGameMode_OnGameSetup()
 		if shared.shared_debug ~= nil then
 			STR_CONFIG.debug = (shared.shared_debug == true)
 		end
+		if shared.shared_population ~= nil then
+			STR_CONFIG.share_population = (shared.shared_population == true)
+		end
+		if shared.shared_production ~= nil then
+			STR_CONFIG.share_production = (shared.shared_production == true)
+		end
 	end
 	print("[STR] Recursos compartidos = " .. tostring(STR_CONFIG.enabled)
 		.. ", botones = " .. tostring(STR_CONFIG.lock_ui)
 		.. ", máx. por reserva = " .. tostring(STR_CONFIG.max_players_per_pool)
 		.. ", IA aliada = " .. tostring(STR_CONFIG.ai_allies)
-		.. ", depuración = " .. tostring(STR_CONFIG.debug))
+		.. ", depuración = " .. tostring(STR_CONFIG.debug)
+		.. ", población = " .. tostring(STR_CONFIG.share_population)
+		.. ", producción = " .. tostring(STR_CONFIG.share_production))
 
 	-- Recursos y aldeanos iniciales: section_starting_conditions
 	local start = _mod.options.section_starting_conditions
@@ -156,6 +164,11 @@ function STRGameMode_OnGameSetup()
 		debug_ui_ok = STRGameMode_Loc(87),
 		debug_ui_error = STRGameMode_Loc(88),
 		debug_no_network = STRGameMode_Loc(89),
+		-- Textos de los botones (al pasar el ratón)
+		ui_shared = STRGameMode_Loc(94),
+		ui_locked = STRGameMode_Loc(95),
+		ui_lock_all = STRGameMode_Loc(96),
+		ui_unlock_all = STRGameMode_Loc(97),
 	}
 end
 

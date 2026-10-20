@@ -60,6 +60,12 @@ local function start_game_mode(spec, lobby)
 	if lobby.debug ~= nil then
 		Mock_SetBoolOption("shared_section", "shared_debug", lobby.debug)
 	end
+	if lobby.population ~= nil then
+		Mock_SetBoolOption("shared_section", "shared_population", lobby.population)
+	end
+	if lobby.production ~= nil then
+		Mock_SetBoolOption("shared_section", "shared_production", lobby.production)
+	end
 	if lobby.villagers ~= nil then
 		Mock_SetEnumOption("section_starting_conditions", "str_extra_villagers",
 			{ "str_villagers_0", "str_villagers_6", "str_villagers_12", "str_villagers_20" }, lobby.villagers)
@@ -563,6 +569,96 @@ test("sin Network_RegisterEvent no se crean botones (nunca cambios solo locales)
 end)
 
 ---------------------------------------------------------------------------------------------------
+-- Población máxima compartida
+---------------------------------------------------------------------------------------------------
+
+local function maxpop(n) return Player_GetMaxPopulationCap(Mock_Player(n).id, CT_Personnel) end
+local function setused(n, v) MOCK.pop[Mock_Player(n).id].used = v end
+
+test("población: el equipo suma 400 y cada uno usa lo que el otro no usa", function()
+	start(coop(0, 0))
+	setused(1, 100); setused(2, 50); Mock_Tick()
+	eq(maxpop(1), 350, "A: 100 usados + 250 libres"); eq(maxpop(2), 300, "B: 50 + 250")
+	setused(1, 300); setused(2, 100); Mock_Tick()
+	eq(maxpop(1), 300, "A llega a 300"); eq(maxpop(2), 100, "B queda en lo que usa: el equipo está lleno")
+	setused(1, 150); Mock_Tick()
+	eq(maxpop(2), 250, "si A baja, B vuelve a tener hueco")
+	eq(maxpop(3), 200, "la IA enemiga no se toca")
+end)
+
+test("población: con 3 jugadores el tope es 600", function()
+	start({ { team = 1 }, { team = 1 }, { team = 1 } })
+	setused(1, 400); setused(2, 50); setused(3, 50); Mock_Tick()
+	eq(maxpop(1), 500, "A: 400 + 100 libres"); eq(maxpop(3), 150, "C: 50 + 100")
+end)
+
+test("población: compensa los modificadores del motor", function()
+	start({ { team = 1, pop_mod = 10 }, { team = 1 } })
+	-- A tiene un modificador de +10: su tope inicial es 210 y el del equipo 410.
+	setused(1, 100); setused(2, 100); Mock_Tick()
+	eq(maxpop(1), 310, "tope efectivo de A, con el modificador incluido"); eq(maxpop(2), 310, "B")
+	setused(1, 200); Mock_Tick()
+	eq(maxpop(1), 310, "sigue cuadrando"); eq(maxpop(2), 210, "B")
+end)
+
+test("población: si un aliado es eliminado, el superviviente vuelve a su tope", function()
+	start(coop(0, 0))
+	setused(1, 100); setused(2, 100); Mock_Tick()
+	eq(maxpop(1), 300, "antes")
+	Mock_Eliminate(2, true); Mock_Tick()
+	eq(maxpop(1), 200, "solo su propio tope")
+end)
+
+test("población: con la casilla desactivada no se toca", function()
+	start(coop(0, 0), { share_population = false })
+	setused(1, 100); setused(2, 50); Mock_Tick(3)
+	eq(maxpop(1), 200, "A"); eq(maxpop(2), 200, "B")
+end)
+
+---------------------------------------------------------------------------------------------------
+-- Producción compartida
+---------------------------------------------------------------------------------------------------
+
+local function entity_of(n, type_name)
+	for _, e in ipairs(MOCK.entities[Mock_Player(n).id]) do
+		if e.type == type_name then return e end
+	end
+end
+
+test("producción: se comparten los edificios con cola de los miembros al empezar", function()
+	start(coop(0, 0))
+	ok(entity_of(1, "town_center").shared, "centro urbano de A"); ok(entity_of(2, "town_center").shared, "de B")
+	ok(not entity_of(1, "house").shared, "las casas no tienen cola")
+	ok(not entity_of(3, "town_center").shared, "la IA enemiga no")
+end)
+
+test("producción: los edificios nuevos se comparten al terminar de construirse", function()
+	start(coop(0, 0))
+	local barracks = Mock_Build(2, "barracks", true)
+	ok(barracks.shared, "cuartel de B")
+	local enemy = Mock_Build(3, "barracks", true)
+	ok(not enemy.shared, "cuartel de la IA enemiga no")
+end)
+
+test("producción: el repaso periódico atrapa edificios que no pasan por construcción", function()
+	start(coop(0, 0))
+	local captured = { type = "outpost_with_queue", pos = { x = 0, y = 0 }, production = true, shared = false }
+	table.insert(MOCK.entities[Mock_Player(1).id], captured)
+	Mock_Tick(15 / MOCK_TICK_SECONDS)
+	ok(captured.shared, "compartido en el repaso")
+end)
+
+test("producción: con la casilla desactivada no se comparte nada; al acabar se quita el evento", function()
+	start(coop(0, 0), { share_production = false })
+	ok(not entity_of(1, "town_center").shared, "sin compartir")
+	ok(not Mock_Build(1, "barracks", true).shared, "ni lo nuevo")
+	start(coop(0, 0))
+	Mock_CallDelegates("OnGameOver")
+	ok(not Rule_Exists(STR_Production_ShareAll), "repaso quitado")
+	ok(not Mock_Build(1, "barracks", true).shared, "evento quitado")
+end)
+
+---------------------------------------------------------------------------------------------------
 -- Otros
 ---------------------------------------------------------------------------------------------------
 
@@ -704,6 +800,30 @@ test("modo: opción 'Jugadores por reserva' del lobby", function()
 	eq(Mock_Res(1, RT_Gold), 300, "hasta 3: comparte")
 	start_game_mode(three, {})
 	eq(Mock_Res(1, RT_Gold), 300, "sin opción: hasta 4")
+end)
+
+test("modo: casillas 'Población máxima compartida' y 'Producción compartida'", function()
+	start_game_mode(coop(0, 0), {})
+	ok(STR_CONFIG.share_population and STR_CONFIG.share_production, "activadas por defecto")
+	start_game_mode(coop(0, 0), { population = false, production = false })
+	MOCK.pop[Mock_Player(1).id].used = 100; Mock_Tick()
+	eq(Player_GetMaxPopulationCap(Mock_Player(1).id, CT_Personnel), 200, "población sin compartir")
+	ok(not MOCK.entities[Mock_Player(1).id][1].shared, "producción sin compartir")
+	start_game_mode(coop(0, 0), { population = true, production = true })
+	MOCK.pop[Mock_Player(1).id].used = 100; Mock_Tick()
+	eq(Player_GetMaxPopulationCap(Mock_Player(1).id, CT_Personnel), 400, "población compartida")
+	ok(MOCK.entities[Mock_Player(1).id][1].shared, "producción compartida")
+end)
+
+test("modo: los textos de los botones salen del CSV (traducibles)", function()
+	start_game_mode(coop(0, 0), {})
+	local data = MOCK.ui.STR_LockUI.data
+	ok(data.food_text == LOC(94), "compartido: fila 94, es " .. tostring(data.food_text))
+	ok(data.all_text == LOC(96), "bloquear todo: fila 96")
+	Mock_Click("1"); Mock_Tick()
+	ok(MOCK.ui.STR_LockUI.data.food_text == LOC(95), "bloqueado: fila 95")
+	Mock_Click("all"); Mock_Tick()
+	ok(MOCK.ui.STR_LockUI.data.all_text == LOC(97), "compartir todo: fila 97")
 end)
 
 test("modo: opción 'Incluir IA aliada' del lobby", function()

@@ -46,6 +46,15 @@ STR_CONFIG = {
 	-- simultáneo y bloqueos/desbloqueos del aliado.
 	notify = true,
 
+	-- Población máxima compartida: el equipo suma su tope de población (p. ej.
+	-- 400 entre dos) y cada uno puede usar lo que los demás no usan.
+	-- Lo fija la casilla del lobby "Población máxima compartida".
+	share_population = true,
+
+	-- Producción compartida: los aliados pueden producir e investigar en tus
+	-- edificios. Lo fija la casilla del lobby "Producción compartida".
+	share_production = true,
+
 	-- Botones de bloqueo en pantalla. Lo fija la opción del lobby
 	-- "Botones de bloqueo".
 	lock_ui = true,

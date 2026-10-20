@@ -20,6 +20,7 @@ import("sharedteamresources/str_config.scar")
 import("sharedteamresources/str_log.scar")
 import("sharedteamresources/str_ledger.scar")
 import("sharedteamresources/str_ui.scar")
+import("sharedteamresources/str_team.scar")
 import("sharedteamresources/str_diagnostics.scar")
 
 STR_MODULE = "SharedTeamResources"
@@ -99,6 +100,9 @@ function SharedTeamResources_Start()
 	-- desde el primer segundo.
 	STR_SyncAll()
 	STR_StartRule()
+	if STR_CONFIG.share_production then
+		STR_Production_Start()
+	end
 
 	for _, pool in ipairs(STR_STATE.pools) do
 		STR_NotifyPool(pool, STR_Message("active"))
@@ -125,6 +129,7 @@ end
 
 function SharedTeamResources_OnGameOver()
 	STR_StopRule()
+	STR_Production_Stop()
 	STR_UI_Remove()
 	STR_DebugDump()
 end
@@ -250,6 +255,9 @@ function STR_CreatePool(team_id, members)
 		STR_STATE.pool_of[player.id] = pool
 		STR_STATE.player_of[player.id] = player
 	end
+	if STR_CONFIG.share_population then
+		STR_Population_Init(pool)
+	end
 	table.insert(STR_STATE.pools, pool)
 	STR_LogEvent("Reserva creada:", pool.name, "miembros:", STR_DescribeMembers(pool),
 		"saldo inicial:", STR_DescribeBalance(pool))
@@ -262,6 +270,9 @@ function STR_RemovePlayer(player_id, reason)
 		return
 	end
 	STR_Ledger_RemoveMember(pool, player_id)
+	if pool.pop ~= nil then
+		pool.pop.base[player_id] = nil
+	end
 	STR_STATE.pool_of[player_id] = nil
 	STR_LogEvent("Jugador", STR_PlayerLabel(player_id), "sale de", pool.name, "(" .. tostring(reason) .. ")",
 		"saldo:", STR_DescribeBalance(pool))
@@ -324,6 +335,9 @@ end
 function STR_SyncAll()
 	for _, pool in ipairs(STR_STATE.pools) do
 		STR_SyncPool(pool)
+		if pool.pop ~= nil then
+			STR_Population_Sync(pool)
+		end
 	end
 end
 
