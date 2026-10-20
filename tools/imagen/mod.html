@@ -7,143 +7,350 @@
 -->
 <html><head><meta charset="utf-8"><title>mod image</title>
 <style>
-  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#120d0a}
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#100b08}
   .t{font-family:'Palatino Linotype','Book Antiqua',Georgia,serif}
 </style></head>
 <body>
 <svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
-      <stop offset="0" stop-color="#3a2a1a"/>
-      <stop offset="0.55" stop-color="#1f160f"/>
-      <stop offset="1" stop-color="#0b0806"/>
+    <!-- fondo -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="78%">
+      <stop offset="0" stop-color="#4a3420"/>
+      <stop offset="0.45" stop-color="#241810"/>
+      <stop offset="1" stop-color="#090605"/>
     </radialGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="0.6" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.75"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffd76a" stop-opacity="0.6"/>
+      <stop offset="0.5" stop-color="#ffb84a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffb84a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7a0" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffe7a0" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grain" width="7" height="7" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.7" fill="#fff" opacity="0.03"/>
+      <circle cx="4.5" cy="5" r="0.6" fill="#000" opacity="0.08"/>
+    </pattern>
+
+    <!-- metales -->
     <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff1b8"/>
-      <stop offset="0.45" stop-color="#e8b94a"/>
+      <stop offset="0" stop-color="#fff4c2"/>
+      <stop offset="0.35" stop-color="#f2c75a"/>
+      <stop offset="0.7" stop-color="#c58f2c"/>
+      <stop offset="1" stop-color="#8a5e18"/>
+    </linearGradient>
+    <linearGradient id="goldH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9a6a1c"/>
+      <stop offset="0.5" stop-color="#ffe9a0"/>
       <stop offset="1" stop-color="#9a6a1c"/>
     </linearGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3f6fb8"/><stop offset="1" stop-color="#1b335f"/>
+    <linearGradient id="iron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b8f94"/>
+      <stop offset="1" stop-color="#3e4247"/>
     </linearGradient>
-    <linearGradient id="red" x1="1" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#c0453a"/><stop offset="1" stop-color="#5f1a16"/>
+
+    <!-- estandartes: tela con pliegues -->
+    <linearGradient id="blueCloth" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c3566"/>
+      <stop offset="0.18" stop-color="#3b67b0"/>
+      <stop offset="0.35" stop-color="#284d8f"/>
+      <stop offset="0.55" stop-color="#4475c0"/>
+      <stop offset="0.75" stop-color="#2a5194"/>
+      <stop offset="1" stop-color="#18305e"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#ffd76a" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#ffd76a" stop-opacity="0"/>
+    <linearGradient id="redCloth" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5a1612"/>
+      <stop offset="0.18" stop-color="#b8402f"/>
+      <stop offset="0.35" stop-color="#8e2a20"/>
+      <stop offset="0.55" stop-color="#c84a36"/>
+      <stop offset="0.75" stop-color="#93301f"/>
+      <stop offset="1" stop-color="#521410"/>
+    </linearGradient>
+    <linearGradient id="clothShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.25"/>
+      <stop offset="0.25" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+    </linearGradient>
+    <linearGradient id="pole" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3d2610"/>
+      <stop offset="0.5" stop-color="#8a5d2c"/>
+      <stop offset="1" stop-color="#3d2610"/>
+    </linearGradient>
+
+    <!-- cofre -->
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a4a22"/>
+      <stop offset="1" stop-color="#3f2410"/>
+    </linearGradient>
+    <linearGradient id="woodLid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c5629"/>
+      <stop offset="1" stop-color="#5a3517"/>
+    </linearGradient>
+
+    <!-- recursos -->
+    <radialGradient id="slot" cx="50%" cy="40%" r="60%">
+      <stop offset="0" stop-color="#3a2a1b"/>
+      <stop offset="1" stop-color="#1a120b"/>
     </radialGradient>
+    <linearGradient id="log" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a06a35"/>
+      <stop offset="1" stop-color="#5e3a18"/>
+    </linearGradient>
+    <radialGradient id="logEnd" cx="45%" cy="45%" r="60%">
+      <stop offset="0" stop-color="#f1cf94"/>
+      <stop offset="1" stop-color="#c9955a"/>
+    </radialGradient>
+    <linearGradient id="ingot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff0b0"/>
+      <stop offset="0.5" stop-color="#e9b743"/>
+      <stop offset="1" stop-color="#a87320"/>
+    </linearGradient>
+    <linearGradient id="rockA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9cdd1"/>
+      <stop offset="1" stop-color="#7a8086"/>
+    </linearGradient>
+    <linearGradient id="rockB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7adb3"/>
+      <stop offset="1" stop-color="#5d6268"/>
+    </linearGradient>
+
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
       <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.7"/>
     </filter>
-    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
-      <rect width="6" height="6" fill="none"/><circle cx="1" cy="1" r="0.6" fill="#fff" opacity="0.025"/>
-    </pattern>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter>
   </defs>
 
+  <!-- ===== Fondo ===== -->
   <rect width="1920" height="1080" fill="url(#bg)"/>
+  <g opacity="0.9">
+    <polygon points="960,-40 820,1080 900,1080" fill="url(#ray)"/>
+    <polygon points="960,-40 1040,1080 1110,1080" fill="url(#ray)"/>
+    <polygon points="960,-40 600,1080 700,1080" fill="url(#ray)" opacity="0.6"/>
+    <polygon points="960,-40 1240,1080 1330,1080" fill="url(#ray)" opacity="0.6"/>
+  </g>
+  <!-- silueta lejana de castillo -->
+  <g fill="#0f0a07" opacity="0.55">
+    <path d="M0 880 L0 760 L60 760 L60 730 L80 730 L80 760 L120 760 L120 700 L150 680 L180 700 L180 760 L240 760 L240 740 L260 740 L260 760 L330 760 L330 800 L420 800 L420 880 Z"/>
+    <path d="M1920 880 L1920 750 L1860 750 L1860 720 L1840 720 L1840 750 L1800 750 L1800 690 L1770 670 L1740 690 L1740 750 L1680 750 L1680 730 L1660 730 L1660 750 L1590 750 L1590 800 L1500 800 L1500 880 Z"/>
+  </g>
   <rect width="1920" height="1080" fill="url(#grain)"/>
-  <!-- marco -->
-  <rect x="40" y="40" width="1840" height="1000" fill="none" stroke="#c9a14a" stroke-opacity="0.45" stroke-width="3"/>
-  <rect x="56" y="56" width="1808" height="968" fill="none" stroke="#c9a14a" stroke-opacity="0.2" stroke-width="1.5"/>
+  <rect width="1920" height="1080" fill="url(#vignette)"/>
+
+  <!-- marco doble con esquinas -->
+  <rect x="40" y="40" width="1840" height="1000" fill="none" stroke="#c9a14a" stroke-opacity="0.5" stroke-width="3"/>
+  <rect x="56" y="56" width="1808" height="968" fill="none" stroke="#c9a14a" stroke-opacity="0.22" stroke-width="1.5"/>
+  <g fill="#e2b85a" opacity="0.8">
+    <path d="M40 40 l40 0 l-6 6 l-28 0 l0 28 l-6 6 z"/>
+    <path d="M1880 40 l-40 0 l6 6 l28 0 l0 28 l6 6 z"/>
+    <path d="M40 1040 l40 0 l-6 -6 l-28 0 l0 -28 l-6 -6 z"/>
+    <path d="M1880 1040 l-40 0 l6 -6 l28 0 l0 -28 l6 -6 z"/>
+  </g>
 
   <!-- brillo central -->
-  <circle cx="960" cy="420" r="430" fill="url(#glow)"/>
+  <circle cx="960" cy="420" r="470" fill="url(#glow)"/>
 
-  <!-- estandartes -->
+  <!-- ===== Estandartes ===== -->
   <g filter="url(#shadow)">
-    <g transform="translate(560,170)">
-      <rect x="-6" y="-30" width="12" height="520" fill="#6b4a22"/>
-      <circle cx="0" cy="-36" r="14" fill="url(#gold)"/>
-      <path d="M6 0 H250 V330 L128 400 L6 330 Z" fill="url(#blue)" stroke="#e8b94a" stroke-width="5"/>
-      <path d="M128 90 L168 170 L128 250 L88 170 Z" fill="#e8b94a" opacity="0.9"/>
+    <!-- azul -->
+    <g transform="translate(560,160)">
+      <rect x="-7" y="-40" width="14" height="560" fill="url(#pole)"/>
+      <circle cx="0" cy="-48" r="15" fill="url(#gold)"/>
+      <rect x="-8" y="-12" width="276" height="12" rx="6" fill="url(#goldH)"/>
+      <circle cx="268" cy="-6" r="9" fill="url(#gold)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="url(#blueCloth)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="url(#clothShade)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="none" stroke="#e8b94a" stroke-width="5"/>
+      <path d="M24 14 H244 V322 L134 384 L24 322 Z" fill="none" stroke="#e8b94a" stroke-width="1.5" opacity="0.6"/>
+      <!-- emblema: torre -->
+      <g transform="translate(134,175)" fill="url(#gold)" stroke="#6b4a12" stroke-width="2">
+        <path d="M-46 70 L-46 -30 L-46 -55 L-30 -55 L-30 -40 L-16 -40 L-16 -55 L16 -55 L16 -40 L30 -40 L30 -55 L46 -55 L46 -30 L46 70 Z"/>
+        <path d="M-12 70 L-12 30 A12 12 0 0 1 12 30 L12 70 Z" fill="#1c3566" stroke="none"/>
+        <rect x="-26" y="-12" width="12" height="22" rx="6" fill="#1c3566" stroke="none"/>
+        <rect x="14" y="-12" width="12" height="22" rx="6" fill="#1c3566" stroke="none"/>
+      </g>
+      <!-- borlas -->
+      <g fill="url(#gold)"><path d="M134 400 l-6 14 l12 0 z"/><circle cx="134" cy="420" r="6"/></g>
     </g>
-    <g transform="translate(1360,170) scale(-1,1)">
-      <rect x="-6" y="-30" width="12" height="520" fill="#6b4a22"/>
-      <circle cx="0" cy="-36" r="14" fill="url(#gold)"/>
-      <path d="M6 0 H250 V330 L128 400 L6 330 Z" fill="url(#red)" stroke="#e8b94a" stroke-width="5"/>
-      <path d="M128 100 a60 60 0 1 0 0.1 0 Z" fill="none" stroke="#e8b94a" stroke-width="16" opacity="0.9"/>
+    <!-- rojo -->
+    <g transform="translate(1360,160) scale(-1,1)">
+      <rect x="-7" y="-40" width="14" height="560" fill="url(#pole)"/>
+      <circle cx="0" cy="-48" r="15" fill="url(#gold)"/>
+      <rect x="-8" y="-12" width="276" height="12" rx="6" fill="url(#goldH)"/>
+      <circle cx="268" cy="-6" r="9" fill="url(#gold)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="url(#redCloth)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="url(#clothShade)"/>
+      <path d="M10 0 H258 V330 L134 400 L10 330 Z" fill="none" stroke="#e8b94a" stroke-width="5"/>
+      <path d="M24 14 H244 V322 L134 384 L24 322 Z" fill="none" stroke="#e8b94a" stroke-width="1.5" opacity="0.6"/>
+      <!-- emblema: corona (deshacer el espejo para que no quede invertida) -->
+      <g transform="translate(134,180) scale(-1,1)" fill="url(#gold)" stroke="#6b4a12" stroke-width="2">
+        <path d="M-58 40 L-64 -38 L-30 -6 L0 -56 L30 -6 L64 -38 L58 40 Z"/>
+        <rect x="-60" y="40" width="120" height="22" rx="4"/>
+        <circle cx="0" cy="-60" r="9"/><circle cx="-64" cy="-42" r="8"/><circle cx="64" cy="-42" r="8"/>
+        <circle cx="-30" cy="51" r="5" fill="#8e2a20" stroke="none"/>
+        <circle cx="0" cy="51" r="6" fill="#2a5194" stroke="none"/>
+        <circle cx="30" cy="51" r="5" fill="#8e2a20" stroke="none"/>
+      </g>
+      <g fill="url(#gold)"><path d="M134 400 l-6 14 l12 0 z"/><circle cx="134" cy="420" r="6"/></g>
     </g>
   </g>
 
-  <!-- cofre/reserva común en el centro -->
-  <g filter="url(#shadow)" transform="translate(960,430)">
-    <rect x="-150" y="-40" width="300" height="160" rx="12" fill="#5a3818" stroke="#e8b94a" stroke-width="6"/>
-    <path d="M-150 -40 Q0 -170 150 -40 Z" fill="#6e4520" stroke="#e8b94a" stroke-width="6"/>
-    <rect x="-150" y="10" width="300" height="16" fill="#e8b94a" opacity="0.85"/>
-    <rect x="-24" y="-10" width="48" height="64" rx="8" fill="url(#gold)" stroke="#5a3818" stroke-width="4"/>
-    <circle cx="0" cy="16" r="7" fill="#3b2410"/>
-    <!-- monedas que asoman -->
-    <ellipse cx="-70" cy="-58" rx="34" ry="12" fill="url(#gold)"/>
-    <ellipse cx="-20" cy="-72" rx="34" ry="12" fill="url(#gold)"/>
-    <ellipse cx="40" cy="-64" rx="34" ry="12" fill="url(#gold)"/>
+  <!-- ===== Reguero de monedas de cada estandarte al cofre ===== -->
+  <g fill="url(#gold)" stroke="#8a5e18" stroke-width="1.5" filter="url(#softShadow)">
+    <ellipse cx="712" cy="600" rx="7" ry="3.5"/>
+    <ellipse cx="740" cy="616" rx="9" ry="4.5"/>
+    <ellipse cx="772" cy="624" rx="11" ry="5"/>
+    <ellipse cx="806" cy="620" rx="12" ry="5.5"/>
+    <ellipse cx="1208" cy="600" rx="7" ry="3.5"/>
+    <ellipse cx="1180" cy="616" rx="9" ry="4.5"/>
+    <ellipse cx="1148" cy="624" rx="11" ry="5"/>
+    <ellipse cx="1114" cy="620" rx="12" ry="5.5"/>
+  </g>
+  <g fill="#fffbe0" opacity="0.85">
+    <circle cx="772" cy="622" r="2"/><circle cx="1148" cy="622" r="2"/>
   </g>
 
-  <!-- flechas de flujo hacia la reserva -->
-  <g fill="none" stroke="#e8b94a" stroke-width="10" stroke-linecap="round" opacity="0.85">
-    <path d="M760 520 Q820 560 860 530"/>
-    <path d="M1160 520 Q1100 560 1060 530"/>
+  <!-- ===== Cofre (reserva común) ===== -->
+  <g transform="translate(960,440)">
+    <ellipse cx="0" cy="138" rx="190" ry="20" fill="#000" opacity="0.45" filter="url(#blur6)"/>
+    <g filter="url(#shadow)">
+      <!-- tapa abierta, levantada detrás -->
+      <path d="M-158 -44 L-150 -168 Q0 -200 150 -168 L158 -44 Z" fill="url(#woodLid)" stroke="#2a170a" stroke-width="3"/>
+      <path d="M-150 -168 Q0 -200 150 -168 L151 -152 Q0 -184 -151 -152 Z" fill="url(#goldH)"/>
+      <rect x="-128" y="-176" width="18" height="132" fill="url(#gold)" opacity="0.9"/>
+      <rect x="110" y="-176" width="18" height="132" fill="url(#gold)" opacity="0.9"/>
+      <path d="M-142 -60 L142 -60 L150 -44 L-150 -44 Z" fill="#1b0e05"/>
+      <!-- montón de oro que sale del cofre -->
+      <path d="M-150 -36 Q-140 -86 -70 -100 Q0 -118 70 -100 Q140 -86 150 -36 Z" fill="url(#gold)" stroke="#8a5e18" stroke-width="2"/>
+      <g fill="url(#gold)" stroke="#8a5e18" stroke-width="1.8">
+        <ellipse cx="-96" cy="-66" rx="24" ry="9"/>
+        <ellipse cx="-46" cy="-88" rx="24" ry="9"/>
+        <ellipse cx="8" cy="-100" rx="24" ry="9"/>
+        <ellipse cx="62" cy="-86" rx="24" ry="9"/>
+        <ellipse cx="104" cy="-62" rx="22" ry="8"/>
+        <ellipse cx="-14" cy="-66" rx="24" ry="9"/>
+        <ellipse cx="40" cy="-56" rx="22" ry="8"/>
+        <ellipse cx="-66" cy="-48" rx="22" ry="8"/>
+      </g>
+      <!-- una corona y una gema sobre el montón -->
+      <path d="M-30 -112 l6 -18 l9 10 l9 -14 l9 14 l9 -10 l6 18 z" fill="url(#gold)" stroke="#8a5e18" stroke-width="1.5"/>
+      <circle cx="74" cy="-104" r="8" fill="#3b7fd0" stroke="#bfe0ff" stroke-width="1.5"/>
+      <!-- cuerpo -->
+      <rect x="-160" y="-36" width="320" height="170" rx="10" fill="url(#wood)" stroke="#2a170a" stroke-width="3"/>
+      <g stroke="#2a170a" stroke-width="2" opacity="0.55">
+        <line x1="-160" y1="10" x2="160" y2="10"/><line x1="-160" y1="56" x2="160" y2="56"/><line x1="-160" y1="98" x2="160" y2="98"/>
+      </g>
+      <!-- herrajes -->
+      <rect x="-160" y="-36" width="320" height="14" fill="url(#goldH)"/>
+      <rect x="-160" y="118" width="320" height="14" fill="url(#goldH)"/>
+      <rect x="-128" y="-36" width="18" height="170" fill="url(#gold)"/>
+      <rect x="110" y="-36" width="18" height="170" fill="url(#gold)"/>
+      <g fill="#6b4a12">
+        <circle cx="-119" cy="0" r="3"/><circle cx="-119" cy="40" r="3"/><circle cx="-119" cy="80" r="3"/>
+        <circle cx="119" cy="0" r="3"/><circle cx="119" cy="40" r="3"/><circle cx="119" cy="80" r="3"/>
+      </g>
+      <!-- candado abierto en el frente: se puede bloquear cuando quieras -->
+      <g transform="translate(0,48)">
+        <path d="M-20 -16 V-38 a20 20 0 0 1 40 0 V-30" fill="none" stroke="url(#iron)" stroke-width="9" stroke-linecap="round"/>
+        <rect x="-30" y="-18" width="60" height="50" rx="8" fill="url(#gold)" stroke="#6b4a12" stroke-width="2.5"/>
+        <circle cx="0" cy="2" r="7" fill="#3b2410"/><rect x="-3" y="4" width="6" height="16" rx="2" fill="#3b2410"/>
+      </g>
+      <!-- brillos sobre el oro -->
+      <path d="M14 -108 l2.5 -7 l2.5 7 l7 2.5 l-7 2.5 l-2.5 7 l-2.5 -7 l-7 -2.5 z" fill="#fffbe0"/>
+      <path d="M-92 -76 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 z" fill="#fffbe0" opacity="0.9"/>
+      <path d="M100 -72 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 z" fill="#fffbe0" opacity="0.9"/>
+    </g>
   </g>
-  <path d="M850 512 l28 14 l-30 14 z" fill="#e8b94a" opacity="0.85"/>
-  <path d="M1070 512 l-28 14 l30 14 z" fill="#e8b94a" opacity="0.85"/>
 
-  <!-- iconos de recursos -->
-  <g transform="translate(960,720)" filter="url(#shadow)">
-    <!-- comida: muslo asado (carne arriba a la derecha, hueso abajo a la izquierda) -->
-    <g transform="translate(-390,0)">
-      <circle r="62" fill="#2a1d12" stroke="#c9a14a" stroke-width="4"/>
+  <!-- ===== Recursos ===== -->
+  <g transform="translate(960,720)">
+    <!-- base: un círculo por recurso -->
+    <g filter="url(#shadow)">
+      <g transform="translate(-390,0)"><circle r="62" fill="url(#slot)" stroke="#c9a14a" stroke-width="4"/><circle r="54" fill="none" stroke="#c9a14a" stroke-opacity="0.25" stroke-width="1.5"/></g>
+      <g transform="translate(-130,0)"><circle r="62" fill="url(#slot)" stroke="#c9a14a" stroke-width="4"/><circle r="54" fill="none" stroke="#c9a14a" stroke-opacity="0.25" stroke-width="1.5"/></g>
+      <g transform="translate(130,0)"><circle r="62" fill="url(#slot)" stroke="#c9a14a" stroke-width="4"/><circle r="54" fill="none" stroke="#c9a14a" stroke-opacity="0.25" stroke-width="1.5"/></g>
+      <g transform="translate(390,0)"><circle r="62" fill="url(#slot)" stroke="#c9a14a" stroke-width="4"/><circle r="54" fill="none" stroke="#c9a14a" stroke-opacity="0.25" stroke-width="1.5"/></g>
+    </g>
+
+    <!-- comida: muslo asado (sin cambios) -->
+    <g transform="translate(-390,0)" filter="url(#softShadow)">
       <g transform="translate(2,-2) rotate(38)">
-        <!-- hueso -->
         <rect x="-5" y="6" width="10" height="36" rx="4" fill="#efe3c8"/>
         <circle cx="-7" cy="44" r="8" fill="#efe3c8"/>
         <circle cx="7" cy="44" r="8" fill="#efe3c8"/>
         <rect x="-2" y="8" width="3" height="32" rx="1.5" fill="#ffffff" opacity="0.5"/>
-        <!-- carne -->
         <path d="M0 -42 C 25 -42 33 -16 26 2 C 20 16 11 20 0 20 C -11 20 -20 16 -26 2 C -33 -16 -25 -42 0 -42 Z" fill="#a9471f"/>
         <path d="M0 -42 C 22 -42 29 -18 23 -1 C 16 12 8 15 0 15 C -9 15 -17 11 -22 -1 C -28 -18 -21 -42 0 -42 Z" fill="#c8612d"/>
         <path d="M -15 -28 C -8 -35 7 -36 14 -28" fill="none" stroke="#f0a067" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
-        <!-- borde de la carne junto al hueso -->
         <ellipse cx="0" cy="18" rx="12" ry="5" fill="#8f3a18"/>
       </g>
     </g>
-    <!-- madera: troncos -->
-    <g transform="translate(-130,0)">
-      <circle r="62" fill="#2a1d12" stroke="#c9a14a" stroke-width="4"/>
-      <rect x="-40" y="-2" width="80" height="26" rx="13" fill="#8a5a2b"/>
-      <rect x="-40" y="-30" width="80" height="26" rx="13" fill="#9c6a35"/>
-      <circle cx="40" cy="11" r="13" fill="#d8a96a"/><circle cx="40" cy="-17" r="13" fill="#e2b87c"/>
-      <circle cx="40" cy="11" r="5" fill="#8a5a2b"/><circle cx="40" cy="-17" r="5" fill="#9c6a35"/>
+
+    <!-- madera: pila de 3 troncos -->
+    <g transform="translate(-130,6)" filter="url(#softShadow)">
+      <!-- dos de abajo -->
+      <rect x="-44" y="2" width="62" height="26" rx="13" fill="url(#log)"/>
+      <ellipse cx="18" cy="15" rx="11" ry="13" fill="url(#logEnd)" stroke="#7a4a22" stroke-width="2"/>
+      <ellipse cx="18" cy="15" rx="5" ry="6" fill="none" stroke="#a87545" stroke-width="1.5"/>
+      <rect x="-18" y="2" width="62" height="26" rx="13" fill="url(#log)" transform="translate(4,0)"/>
+      <ellipse cx="48" cy="15" rx="11" ry="13" fill="url(#logEnd)" stroke="#7a4a22" stroke-width="2"/>
+      <ellipse cx="48" cy="15" rx="5" ry="6" fill="none" stroke="#a87545" stroke-width="1.5"/>
+      <!-- uno arriba -->
+      <rect x="-30" y="-24" width="62" height="26" rx="13" fill="url(#log)"/>
+      <ellipse cx="32" cy="-11" rx="11" ry="13" fill="url(#logEnd)" stroke="#7a4a22" stroke-width="2"/>
+      <ellipse cx="32" cy="-11" rx="5" ry="6" fill="none" stroke="#a87545" stroke-width="1.5"/>
+      <!-- vetas de la corteza -->
+      <g stroke="#4a2c12" stroke-width="1.5" opacity="0.6" stroke-linecap="round">
+        <line x1="-22" y1="-16" x2="10" y2="-16"/><line x1="-14" y1="-6" x2="16" y2="-6"/>
+        <line x1="-36" y1="10" x2="-6" y2="10"/><line x1="-8" y1="20" x2="26" y2="20"/>
+      </g>
+      <!-- hoja -->
+      <path d="M-34 -22 q-10 -14 6 -18 q2 12 -6 18 z" fill="#5f8f3a"/>
     </g>
-    <!-- oro: monedas -->
-    <g transform="translate(130,0)">
-      <circle r="62" fill="#2a1d12" stroke="#c9a14a" stroke-width="4"/>
-      <ellipse cx="-10" cy="22" rx="32" ry="11" fill="#9a6a1c"/>
-      <ellipse cx="-10" cy="14" rx="32" ry="11" fill="url(#gold)"/>
-      <ellipse cx="6" cy="0" rx="32" ry="11" fill="#9a6a1c"/>
-      <ellipse cx="6" cy="-8" rx="32" ry="11" fill="url(#gold)"/>
-      <ellipse cx="-4" cy="-24" rx="32" ry="11" fill="#9a6a1c"/>
-      <ellipse cx="-4" cy="-32" rx="32" ry="11" fill="url(#gold)"/>
+
+    <!-- oro: lingotes y monedas -->
+    <g transform="translate(130,6)" filter="url(#softShadow)">
+      <path d="M-44 14 L-36 -4 L4 -4 L12 14 Z" fill="url(#ingot)" stroke="#8a5e18" stroke-width="1.5"/>
+      <path d="M-4 14 L4 -4 L44 -4 L52 14 Z" fill="url(#ingot)" stroke="#8a5e18" stroke-width="1.5" transform="translate(-8,0)"/>
+      <path d="M-24 -4 L-16 -22 L24 -22 L32 -4 Z" fill="url(#ingot)" stroke="#8a5e18" stroke-width="1.5"/>
+      <path d="M-14 -20 L18 -20" stroke="#fffbe0" stroke-width="2" opacity="0.8"/>
+      <ellipse cx="-30" cy="26" rx="14" ry="6" fill="#a87320"/><ellipse cx="-30" cy="23" rx="14" ry="6" fill="url(#gold)" stroke="#8a5e18" stroke-width="1"/>
+      <ellipse cx="30" cy="28" rx="14" ry="6" fill="#a87320"/><ellipse cx="30" cy="25" rx="14" ry="6" fill="url(#gold)" stroke="#8a5e18" stroke-width="1"/>
+      <path d="M22 -30 l3 -8 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 z" fill="#fffbe0" opacity="0.9"/>
     </g>
-    <!-- piedra: bloques -->
-    <g transform="translate(390,0)">
-      <circle r="62" fill="#2a1d12" stroke="#c9a14a" stroke-width="4"/>
-      <path d="M-40 30 L-30 -2 L4 -8 L14 26 Z" fill="#9aa0a6"/>
-      <path d="M2 28 L10 -14 L40 -6 L42 28 Z" fill="#7f868d"/>
-      <path d="M-22 -4 L-12 -36 L22 -38 L18 -8 Z" fill="#b6bcc1"/>
+
+    <!-- piedra: bloques tallados -->
+    <g transform="translate(390,8)" filter="url(#softShadow)">
+      <path d="M-44 26 L-40 -2 L-6 -8 L0 22 Z" fill="url(#rockB)"/>
+      <path d="M-40 -2 L-34 -8 L-2 -14 L-6 -8 Z" fill="#d7dbde"/>
+      <path d="M0 26 L6 -12 L40 -6 L42 26 Z" fill="url(#rockA)"/>
+      <path d="M6 -12 L12 -18 L44 -12 L40 -6 Z" fill="#e2e5e8"/>
+      <path d="M-24 -10 L-18 -40 L16 -42 L12 -14 Z" fill="url(#rockA)"/>
+      <path d="M-18 -40 L-12 -46 L20 -48 L16 -42 Z" fill="#eef0f2"/>
+      <g stroke="#4d5257" stroke-width="1.5" opacity="0.5" fill="none">
+        <path d="M-30 6 l10 4"/><path d="M16 4 l12 -2"/><path d="M-8 -28 l10 2"/>
+      </g>
     </g>
   </g>
 
-  <!-- candado pequeño (bloqueo) -->
-  <g transform="translate(1440,690)" opacity="0.95" filter="url(#shadow)">
-    <path d="M-22 0 V-22 a22 22 0 0 1 44 0 V0" fill="none" stroke="#c9a14a" stroke-width="9"/>
-    <rect x="-34" y="-4" width="68" height="54" rx="8" fill="url(#gold)"/>
-    <circle cx="0" cy="18" r="7" fill="#5a3818"/><rect x="-3" y="20" width="6" height="16" fill="#5a3818"/>
-  </g>
-
-  <!-- título -->
+  <!-- ===== Título ===== -->
+  <text class="t" x="960" y="912" text-anchor="middle" font-size="128" font-weight="bold"
+        fill="#1a0e05" opacity="0.7" letter-spacing="10" transform="translate(0,6)">SHARED RESOURCES</text>
   <text class="t" x="960" y="905" text-anchor="middle" font-size="128" font-weight="bold"
-        fill="url(#gold)" stroke="#2a1708" stroke-width="3" letter-spacing="10" filter="url(#shadow)">SHARED RESOURCES</text>
-  <text class="t" x="960" y="975" text-anchor="middle" font-size="40" fill="#f1e2c4" opacity="0.9" letter-spacing="3">
+        fill="url(#gold)" stroke="#3a2209" stroke-width="2.5" letter-spacing="10">SHARED RESOURCES</text>
+  <!-- separador entre título y subtítulo -->
+  <g stroke="#c9a14a" stroke-width="2" opacity="0.75">
+    <line x1="660" y1="930" x2="938" y2="930"/><line x1="982" y1="930" x2="1260" y2="930"/>
+  </g>
+  <path d="M960 921 l11 9 l-11 9 l-11 -9 z" fill="#e2b85a"/>
+  <text class="t" x="960" y="975" text-anchor="middle" font-size="40" fill="#f1e2c4" opacity="0.92" letter-spacing="3">
     Una sola economía para todo el equipo · Bloquea cada recurso cuando quieras</text>
 </svg>
 </body></html>
