@@ -1,0 +1,206 @@
+---------------------------------------------------------------------------------------------------
+-- Shared Resources - Script principal del Game Mode
+--
+-- Es el modo ESTÁNDAR oficial (gamemodes/standard_mode.scar, el mismo que usa
+-- Empire Wars como base) con tres añadidos:
+--   * Reserva compartida de comida, madera, oro y piedra entre aliados, con
+--     botones en partida para bloquear cada recurso o todos.
+--   * Recursos iniciales configurables.
+--   * Aldeanos extra al empezar.
+--
+-- Las condiciones de victoria (edificios distintivos, maravilla, lugares
+-- sagrados, regicidio), la edad inicial, la velocidad, la niebla, los equipos
+-- fijos y los tributos los lee standard_mode.scar de las opciones del lobby,
+-- con las mismas claves que el modo oficial (ver el .rdo).
+--
+-- Probar:
+--   1. Content Editor: File > Save All, luego Build > Build Mod.
+--   2. Juego: Un jugador > Escaramuza > Crear partida (o Multijugador > Personalizada).
+--   3. Configuración de partida > Editar > elegir "Shared Resources".
+--
+-- Consola del juego: Ctrl+Alt+~  (los mensajes del mod empiezan por [STR]).
+---------------------------------------------------------------------------------------------------
+
+-- Modo estándar oficial completo (importa cardinal.scar, condiciones de
+-- victoria, inicio clásico, diplomacia, puntuación e interfaz).
+import("gamemodes/standard_mode.scar")
+
+-- Reserva compartida
+import("sharedteamresources/str_main.scar")
+
+-----------------------------------------------------------------------
+-- Data
+-----------------------------------------------------------------------
+
+_mod = {
+	module = "STRGameMode",
+	-- GUID del mod (Edit > Copy Mod Guid en el Content Editor), sin guiones.
+	guid = "01f4238017c449e580234f6bd61fca21",
+	options = {},
+	-- Recursos iniciales por opción del lobby (nil = los del juego).
+	starting_resources = {
+		str_resources_standard = nil,
+		str_resources_medium = { food = 1000, wood = 1000, gold = 600, stone = 400 },
+		str_resources_high = { food = 3000, wood = 3000, gold = 2000, stone = 1500 },
+		str_resources_very_high = { food = 10000, wood = 10000, gold = 7500, stone = 5000 },
+	},
+	-- Jugadores por reserva por opción del lobby.
+	pool_sizes = {
+		shared_pool_2 = 2,
+		shared_pool_3 = 3,
+		shared_pool_4 = 4,
+	},
+	-- Aldeanos extra por opción del lobby.
+	extra_villagers = {
+		str_villagers_0 = 0,
+		str_villagers_6 = 6,
+		str_villagers_12 = 12,
+		str_villagers_20 = 20,
+	},
+	resources = nil,
+	villagers = 0,
+}
+
+-- Clave de texto localizado: fila `row` de assets/locdb/SharedTeamResources_es.csv
+local function STRGameMode_Loc(row)
+	return "$" .. _mod.guid .. ":" .. tostring(row)
+end
+
+-- Devuelve la clave del elemento elegido de una opción de tipo lista, o nil.
+local function STRGameMode_SelectedKey(option)
+	if option == nil or option.enum_items == nil then
+		return nil
+	end
+	for key, value in pairs(option.enum_items) do
+		if option.enum_value == value then
+			return key
+		end
+	end
+	return nil
+end
+
+Core_RegisterModule(_mod.module)
+
+-----------------------------------------------------------------------
+-- Scripting framework
+-----------------------------------------------------------------------
+
+-- Se llama durante la carga. Lee las opciones propias del mod.
+-- (Las del modo estándar las lee StandardMode_OnGameSetup.)
+function STRGameMode_OnGameSetup()
+	Setup_GetWinConditionOptions(_mod.options)
+
+	-- "Recursos compartidos": shared_section / shared_mode
+	local shared = _mod.options.shared_section
+	if shared ~= nil and shared.shared_mode ~= nil then
+		STR_CONFIG.enabled = (STRGameMode_SelectedKey(shared.shared_mode) ~= "shared_off")
+	else
+		print("[STR] Opción del lobby no encontrada: recursos compartidos activados por defecto")
+	end
+	if shared ~= nil and shared.shared_lock_buttons ~= nil then
+		STR_CONFIG.lock_ui = (shared.shared_lock_buttons == true)
+	end
+	if shared ~= nil then
+		local size_key = STRGameMode_SelectedKey(shared.shared_pool_size)
+		if size_key ~= nil then
+			STR_CONFIG.max_players_per_pool = _mod.pool_sizes[size_key] or STR_CONFIG.max_players_per_pool
+		end
+		if shared.shared_ai_allies ~= nil then
+			STR_CONFIG.ai_allies = (shared.shared_ai_allies == true)
+		end
+		if shared.shared_debug ~= nil then
+			STR_CONFIG.debug = (shared.shared_debug == true)
+		end
+	end
+	print("[STR] Recursos compartidos = " .. tostring(STR_CONFIG.enabled)
+		.. ", botones = " .. tostring(STR_CONFIG.lock_ui)
+		.. ", máx. por reserva = " .. tostring(STR_CONFIG.max_players_per_pool)
+		.. ", IA aliada = " .. tostring(STR_CONFIG.ai_allies)
+		.. ", depuración = " .. tostring(STR_CONFIG.debug))
+
+	-- Recursos y aldeanos iniciales: section_starting_conditions
+	local start = _mod.options.section_starting_conditions
+	if start ~= nil then
+		local resources_key = STRGameMode_SelectedKey(start.str_start_resources)
+		if resources_key ~= nil then
+			_mod.resources = _mod.starting_resources[resources_key]
+		end
+		local villagers_key = STRGameMode_SelectedKey(start.str_extra_villagers)
+		if villagers_key ~= nil then
+			_mod.villagers = _mod.extra_villagers[villagers_key] or 0
+		end
+	end
+
+	-- Avisos en pantalla (filas del .csv de localización).
+	local function per_resource(first_row)
+		return {
+			[RT_Food] = STRGameMode_Loc(first_row),
+			[RT_Wood] = STRGameMode_Loc(first_row + 1),
+			[RT_Gold] = STRGameMode_Loc(first_row + 2),
+			[RT_Stone] = STRGameMode_Loc(first_row + 3),
+		}
+	end
+	STR_CONFIG.messages = {
+		active = STRGameMode_Loc(15),
+		debt = per_resource(11),
+		locked = per_resource(16),
+		unlocked = per_resource(20),
+		locked_all = STRGameMode_Loc(24),
+		unlocked_all = STRGameMode_Loc(25),
+		-- Avisos de depuración (opción del lobby "Avisos de depuración")
+		debug_pool = STRGameMode_Loc(82),          -- %1COUNT%
+		debug_too_many = STRGameMode_Loc(83),      -- %1COUNT% %2MAX%
+		debug_too_few = STRGameMode_Loc(84),       -- %1COUNT%
+		debug_disabled = STRGameMode_Loc(85),
+		debug_no_team = STRGameMode_Loc(86),
+		debug_ui_ok = STRGameMode_Loc(87),
+		debug_ui_error = STRGameMode_Loc(88),
+		debug_no_network = STRGameMode_Loc(89),
+	}
+end
+
+-- Inicialización: recursos iniciales y aldeanos extra.
+-- Se ejecuta antes de Start, así la reserva compartida suma ya estos recursos.
+function STRGameMode_OnInit()
+	for _, player in pairs(PLAYERS) do
+		if _mod.resources ~= nil then
+			Player_SetResource(player.id, RT_Food, _mod.resources.food)
+			Player_SetResource(player.id, RT_Wood, _mod.resources.wood)
+			Player_SetResource(player.id, RT_Gold, _mod.resources.gold)
+			Player_SetResource(player.id, RT_Stone, _mod.resources.stone)
+		end
+		if _mod.villagers > 0 then
+			STRGameMode_SpawnVillagers(player, _mod.villagers)
+		end
+	end
+	if _mod.resources ~= nil then
+		print("[STR] Recursos iniciales: " .. _mod.resources.food .. " / " .. _mod.resources.wood
+			.. " / " .. _mod.resources.gold .. " / " .. _mod.resources.stone)
+	end
+end
+
+-- Posición junto al centro urbano (o la posición de inicio si no hay, p. ej. nómada).
+function STRGameMode_GetSpawnPosition(player)
+	local eg = Player_GetEntities(player.id)
+	EGroup_Filter(eg, "town_center", FILTER_KEEP)
+	if EGroup_Count(eg) > 0 then
+		local town_center = EGroup_GetEntityAt(eg, 1)
+		return Util_GetOffsetPosition(Entity_GetPosition(town_center), 20, 10)
+	end
+	return player.startingPos
+end
+
+function STRGameMode_SpawnVillagers(player, count)
+	local ok, err = pcall(function()
+		local villager = BP_GetSquadArchetypeBlueprintForPlayer(player.id, BA_VILLAGER)
+		local position = STRGameMode_GetSpawnPosition(player)
+		if villager == nil or position == nil then
+			return
+		end
+		local sgroup = SGroup_CreateIfNotFound("sg_str_extra_villagers_" .. tostring(player.index))
+		UnitEntry_DeploySquads(player.id, sgroup, { { sbp = villager, numSquads = count } }, position)
+	end)
+	if not ok then
+		print("[STR][!] No se pudieron crear los aldeanos extra: " .. tostring(err))
+	end
+end

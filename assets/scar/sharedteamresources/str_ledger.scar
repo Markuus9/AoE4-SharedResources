@@ -1,0 +1,325 @@
+---------------------------------------------------------------------------------------------------
+-- SharedResources - Contabilidad (ledger)
+--
+-- Lógica pura de la reserva compartida. NO llama a ninguna función del motor:
+-- recibe lecturas de recursos y devuelve el saldo que hay que fijar.
+-- Gracias a eso se puede probar fuera del juego (ver tests/).
+--
+-- Modelo:
+--   Cada reserva tiene, por recurso, un saldo con signo (balance) y un estado
+--   compartido / bloqueado. En cada sincronización, para cada recurso compartido:
+--     delta_j  = lectura_actual_j - ultimo_valor_fijado_j     (por jugador j)
+--     balance += suma(delta_j)
+--     aporte_j += delta_j                                      (lo que aporta cada uno)
+--     visible  = max(balance, 0)   -> se fija a todos los miembros
+--   Si balance < 0 hay deuda: dos jugadores gastaron a la vez el mismo saldo.
+--   Los ingresos posteriores pagan la deuda antes de volver a ser visibles.
+--
+-- Bloqueo de un recurso:
+--   El saldo común se reparte SEGÚN LO APORTADO por cada jugador (solo cuentan
+--   aportes positivos). Mientras está bloqueado, cada uno tiene su propio saldo
+--   y la reserva no lo toca. Si había deuda, queda pendiente en la reserva.
+-- Desbloqueo:
+--   Los saldos de los miembros vuelven a sumarse a la reserva (menos la deuda
+--   pendiente) y cada uno empieza aportando lo que traía.
+--
+-- Invariantes:
+--   balance == inicial + ingresos - gastos - repartido + reincorporado
+--   suma(aporte_j) == balance                 (para recursos compartidos)
+--   Es decir, ni la sincronización ni el bloqueo crean o destruyen recursos.
+---------------------------------------------------------------------------------------------------
+
+-- Diferencias menores que esto se consideran ruido de coma flotante.
+STR_LEDGER_EPSILON = 0.0001
+
+-- Crea una reserva vacía para la lista de tipos de recurso indicada.
+function STR_Ledger_New(resource_types, name)
+	local pool = {
+		name = name or "pool",
+		types = resource_types,
+		balance = {},
+		shared = {},         -- shared[rt] = true si se comparte
+		members = {},        -- lista ordenada de ids (orden determinista)
+		last = {},           -- last[id][rt] = último valor fijado a ese jugador
+		contrib = {},        -- contrib[id][rt] = aporte neto a la reserva
+		stats = {
+			syncs = 0,
+			income = {},     -- suma de deltas positivos por recurso
+			spent = {},      -- suma de deltas negativos (en positivo) por recurso
+			initial = {},    -- recursos iniciales aportados
+			released = {},   -- repartido a los jugadores al bloquear
+			rejoined = {},   -- reincorporado a la reserva al desbloquear
+			debt_events = 0, -- veces que el saldo pasó a negativo
+			max_debt = {},   -- mayor deuda observada por recurso
+		},
+	}
+	for _, rt in ipairs(resource_types) do
+		pool.balance[rt] = 0
+		pool.shared[rt] = true
+		pool.stats.income[rt] = 0
+		pool.stats.spent[rt] = 0
+		pool.stats.initial[rt] = 0
+		pool.stats.released[rt] = 0
+		pool.stats.rejoined[rt] = 0
+		pool.stats.max_debt[rt] = 0
+	end
+	return pool
+end
+
+function STR_Ledger_HasMember(pool, id)
+	return pool.last[id] ~= nil
+end
+
+function STR_Ledger_IsShared(pool, rt)
+	return pool.shared[rt] == true
+end
+
+-- true si al menos un recurso se comparte.
+function STR_Ledger_AnyShared(pool)
+	for _, rt in ipairs(pool.types) do
+		if pool.shared[rt] then
+			return true
+		end
+	end
+	return false
+end
+
+-- Añade un jugador. Sus recursos actuales se suman a la reserva (recursos iniciales)
+-- en los recursos compartidos. current = { [rt] = valor }
+function STR_Ledger_AddMember(pool, id, current)
+	if STR_Ledger_HasMember(pool, id) then
+		return false
+	end
+	table.insert(pool.members, id)
+	pool.last[id] = {}
+	pool.contrib[id] = {}
+	for _, rt in ipairs(pool.types) do
+		local value = (current and current[rt]) or 0
+		pool.contrib[id][rt] = 0
+		if pool.shared[rt] then
+			pool.balance[rt] = pool.balance[rt] + value
+			pool.stats.initial[rt] = pool.stats.initial[rt] + value
+			pool.contrib[id][rt] = value
+		end
+		-- Todavía no se le ha fijado nada: su "último valor" es lo que tiene,
+		-- así la primera sincronización no vuelve a contar estos recursos.
+		pool.last[id][rt] = value
+	end
+	return true
+end
+
+-- Quita un jugador SIN contar sus cambios desde la última sincronización.
+-- Se usa al ser eliminado: el motor puede vaciar sus recursos y eso no debe
+-- descontarse de la reserva del aliado. Su aporte pasa a los que quedan.
+function STR_Ledger_RemoveMember(pool, id)
+	if not STR_Ledger_HasMember(pool, id) then
+		return false
+	end
+	local removed = pool.contrib[id]
+	pool.last[id] = nil
+	pool.contrib[id] = nil
+	for i, member in ipairs(pool.members) do
+		if member == id then
+			table.remove(pool.members, i)
+			break
+		end
+	end
+	local count = #pool.members
+	if count > 0 then
+		for _, rt in ipairs(pool.types) do
+			local share = removed[rt] / count
+			for _, member in ipairs(pool.members) do
+				pool.contrib[member][rt] = pool.contrib[member][rt] + share
+			end
+		end
+	end
+	return true
+end
+
+-- Saldo visible (el que ven y pueden gastar los jugadores).
+function STR_Ledger_GetVisible(pool, rt)
+	local value = pool.balance[rt]
+	if value < 0 then
+		return 0
+	end
+	return value
+end
+
+-- Deuda actual (0 si no hay).
+function STR_Ledger_GetDebt(pool, rt)
+	local value = pool.balance[rt]
+	if value < 0 then
+		return -value
+	end
+	return 0
+end
+
+-- Sincroniza la reserva.
+--   readings = { [id] = { [rt] = valor_actual } }   (lecturas del motor)
+-- Devuelve:
+--   targets = { [rt] = valor }  valor que hay que fijar a TODOS los miembros
+--                               (solo recursos compartidos; nil = no tocar)
+--   report  = { changed = bool, deltas = {[id]={[rt]=d}}, new_debt = {[rt]=d} }
+-- Tras llamar a esta función, el llamador DEBE fijar targets a cada miembro.
+function STR_Ledger_Sync(pool, readings)
+	pool.stats.syncs = pool.stats.syncs + 1
+	local report = { changed = false, deltas = {}, new_debt = {} }
+	local targets = {}
+
+	for _, rt in ipairs(pool.types) do
+		if pool.shared[rt] then
+			local was_in_debt = pool.balance[rt] < -STR_LEDGER_EPSILON
+			local total = 0
+			for _, id in ipairs(pool.members) do
+				local reading = readings[id] and readings[id][rt]
+				if reading ~= nil then
+					local delta = reading - pool.last[id][rt]
+					if delta > STR_LEDGER_EPSILON or delta < -STR_LEDGER_EPSILON then
+						report.changed = true
+						report.deltas[id] = report.deltas[id] or {}
+						report.deltas[id][rt] = delta
+						total = total + delta
+						pool.contrib[id][rt] = pool.contrib[id][rt] + delta
+						if delta > 0 then
+							pool.stats.income[rt] = pool.stats.income[rt] + delta
+						else
+							pool.stats.spent[rt] = pool.stats.spent[rt] - delta
+						end
+					end
+				end
+			end
+
+			pool.balance[rt] = pool.balance[rt] + total
+
+			if pool.balance[rt] < -STR_LEDGER_EPSILON then
+				if not was_in_debt then
+					pool.stats.debt_events = pool.stats.debt_events + 1
+					report.new_debt[rt] = -pool.balance[rt]
+				end
+				if -pool.balance[rt] > pool.stats.max_debt[rt] then
+					pool.stats.max_debt[rt] = -pool.balance[rt]
+				end
+			end
+
+			targets[rt] = STR_Ledger_GetVisible(pool, rt)
+			for _, id in ipairs(pool.members) do
+				-- Si el valor fijado no coincide con la lectura también hay que escribir.
+				local reading = readings[id] and readings[id][rt]
+				if reading == nil or reading ~= targets[rt] then
+					report.changed = true
+				end
+				pool.last[id][rt] = targets[rt]
+			end
+		end
+	end
+
+	return targets, report
+end
+
+-- Reparte `amount` entre los miembros según sus aportes positivos.
+-- Si nadie tiene aporte positivo, a partes iguales. Devuelve { [id] = parte }.
+function STR_Ledger_SplitByContribution(pool, rt, amount)
+	local parts = {}
+	local count = #pool.members
+	if count == 0 then
+		return parts
+	end
+	local positive_total = 0
+	for _, id in ipairs(pool.members) do
+		local c = pool.contrib[id][rt]
+		if c > 0 then
+			positive_total = positive_total + c
+		end
+	end
+	local assigned = 0
+	for i, id in ipairs(pool.members) do
+		local part
+		if i == count then
+			part = amount - assigned       -- el último recibe el resto: suma exacta
+		elseif positive_total > STR_LEDGER_EPSILON then
+			part = amount * math.max(pool.contrib[id][rt], 0) / positive_total
+		else
+			part = amount / count
+		end
+		parts[id] = part
+		assigned = assigned + part
+	end
+	return parts
+end
+
+-- Bloquea un recurso. Primero hay que sincronizar (para no perder cambios).
+-- Devuelve { [id] = saldo propio } que hay que fijar a cada miembro, o nil si
+-- ya estaba bloqueado.
+function STR_Ledger_Lock(pool, rt)
+	if not pool.shared[rt] then
+		return nil
+	end
+	local amount = STR_Ledger_GetVisible(pool, rt)
+	local parts = STR_Ledger_SplitByContribution(pool, rt, amount)
+	pool.shared[rt] = false
+	pool.balance[rt] = pool.balance[rt] - amount     -- queda 0, o la deuda pendiente
+	pool.stats.released[rt] = pool.stats.released[rt] + amount
+	for _, id in ipairs(pool.members) do
+		pool.contrib[id][rt] = 0
+		pool.last[id][rt] = parts[id]
+	end
+	return parts
+end
+
+-- Desbloquea un recurso. readings = { [id] = { [rt] = valor } } (saldos propios).
+-- Devuelve el valor visible común que hay que fijar a todos, o nil si ya se compartía.
+function STR_Ledger_Unlock(pool, rt, readings)
+	if pool.shared[rt] then
+		return nil
+	end
+	local debt = STR_Ledger_GetDebt(pool, rt)
+	local total = 0
+	for _, id in ipairs(pool.members) do
+		total = total + ((readings[id] and readings[id][rt]) or 0)
+	end
+	pool.shared[rt] = true
+	pool.balance[rt] = pool.balance[rt] + total
+	pool.stats.rejoined[rt] = pool.stats.rejoined[rt] + total
+	-- Cada uno aporta lo que trae; la deuda pendiente se descuenta en proporción.
+	for _, id in ipairs(pool.members) do
+		local value = (readings[id] and readings[id][rt]) or 0
+		local debt_share
+		if total > STR_LEDGER_EPSILON then
+			debt_share = debt * value / total
+		else
+			debt_share = debt / #pool.members
+		end
+		pool.contrib[id][rt] = value - debt_share
+	end
+	local visible = STR_Ledger_GetVisible(pool, rt)
+	for _, id in ipairs(pool.members) do
+		pool.last[id][rt] = visible
+	end
+	return visible
+end
+
+-- Total esperado según las estadísticas. Debe ser igual a balance (invariante).
+function STR_Ledger_ExpectedBalance(pool, rt)
+	local s = pool.stats
+	return s.initial[rt] + s.income[rt] - s.spent[rt] - s.released[rt] + s.rejoined[rt]
+end
+
+function STR_Ledger_CheckInvariant(pool)
+	for _, rt in ipairs(pool.types) do
+		local diff = pool.balance[rt] - STR_Ledger_ExpectedBalance(pool, rt)
+		if diff > 0.01 or diff < -0.01 then
+			return false, rt, diff
+		end
+		if pool.shared[rt] and #pool.members > 0 then
+			local sum = 0
+			for _, id in ipairs(pool.members) do
+				sum = sum + pool.contrib[id][rt]
+			end
+			diff = sum - pool.balance[rt]
+			if diff > 0.01 or diff < -0.01 then
+				return false, rt, diff
+			end
+		end
+	end
+	return true
+end

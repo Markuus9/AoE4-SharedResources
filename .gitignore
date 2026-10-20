@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+# Generado por el Content Editor
+cache/
+*.sga
+.aoe4/
+# Borrador antiguo copiado por error (no forma parte del mod)
+/SharedTeamResources/

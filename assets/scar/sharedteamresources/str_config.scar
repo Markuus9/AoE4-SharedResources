@@ -1,0 +1,90 @@
+---------------------------------------------------------------------------------------------------
+-- SharedResources - Configuración
+--
+-- Todos los valores ajustables del mod están aquí. No contiene lógica.
+-- El script principal del modo (SharedTeamResources.scar) sobrescribe algunos
+-- valores según las opciones del lobby (`enabled`, `lock_ui`, `messages`).
+---------------------------------------------------------------------------------------------------
+
+STR_CONFIG = {
+	-- Activa o desactiva el mod por completo. Lo fija la opción del lobby
+	-- "Recursos compartidos".
+	enabled = true,
+
+	-- Número máximo de jugadores que pueden compartir una reserva. Lo fija la
+	-- opción del lobby "Jugadores por reserva" (2, 3 o 4). Los equipos con más
+	-- miembros no comparten (y, con los avisos de depuración, se dice por qué).
+	max_players_per_pool = 4,
+
+	-- Número mínimo de jugadores para crear una reserva. Con 1 no tiene sentido.
+	min_players_per_pool = 2,
+
+	-- Solo comparten los equipos con al menos un humano: los equipos formados
+	-- solo por IA (p. ej. los enemigos) nunca comparten.
+	-- Si es true, una IA aliada de un humano también entra en la reserva
+	-- (útil para jugar o probar en solitario). Si es false, solo humanos.
+	-- Lo fija la opción del lobby "Incluir IA aliada".
+	ai_allies = true,
+
+	-- Avisos de depuración en pantalla: al empezar dicen si tu equipo comparte
+	-- y por qué no, y si se ha creado el panel de botones. Lo fija la opción
+	-- del lobby "Avisos de depuración". (Los mensajes de print() del log no se
+	-- ven en la versión normal del juego; esto sí.)
+	debug = false,
+
+	-- Cada cuánto se sincroniza la reserva, en segundos.
+	-- 0 = cada tick de simulación (Rule_Add). Es lo recomendado: reduce la
+	-- ventana de gastos simultáneos al mínimo posible.
+	sync_interval = 0,
+
+	-- Registro con print() (no visible en la versión normal del juego; ver str_log.scar).
+	--   0 = nada, 1 = errores y avisos, 2 = eventos (deuda, bloqueos, equipos),
+	--   3 = traza de cada sincronización con cambios (muy verboso)
+	log_level = 2,
+
+	-- Muestra avisos en pantalla (event cues): reserva activada, deuda por gasto
+	-- simultáneo y bloqueos/desbloqueos del aliado.
+	notify = true,
+
+	-- Botones de bloqueo en pantalla. Lo fija la opción del lobby
+	-- "Botones de bloqueo".
+	lock_ui = true,
+
+	-- Panel de botones. Por defecto es una columna pegada a la derecha del
+	-- recuadro de recursos de abajo a la izquierda: un botón a la altura de cada
+	-- recurso (comida, madera, oro, piedra) y "Todos" encima, a la altura de la
+	-- población. Valores medidos sobre una captura a 1080p con escala de
+	-- interfaz normal; si no cuadra con tu pantalla, ajusta:
+	--   margin      -> "izquierda,arriba,derecha,abajo" en píxeles
+	--   row_height  -> separación entre recursos
+	ui = {
+		layout = "column",       -- column (junto a cada recurso) | row (en fila)
+		horizontal = "Left",     -- Left | Center | Right
+		vertical = "Bottom",     -- Top | Center | Bottom
+		margin = "198,0,0,16",
+		row_height = 39,
+		button_width = 118,
+	},
+
+	-- Textos localizados de los avisos ("$GUID:fila" del .locdb del mod).
+	-- Los rellena el script principal del modo. Si falta alguno, el aviso
+	-- solo se escribe en el log.
+	--   messages.active          -> sin parámetros
+	--   messages.debt[rt]        -> %1AMOUNT% = cantidad de deuda
+	--   messages.locked[rt]      -> %1PLAYER% = quién lo bloquea
+	--   messages.unlocked[rt]    -> %1PLAYER%
+	--   messages.locked_all      -> %1PLAYER%
+	--   messages.unlocked_all    -> %1PLAYER%
+	--   messages.debug_*         -> avisos de depuración (ver SharedTeamResources.scar)
+	messages = nil,
+
+	-- Ejecuta además la sonda de diagnóstico (str_diagnostics.scar).
+	-- Registra recursos, deltas y eventos de juego sin modificar nada.
+	diagnostics = false,
+
+	-- Si es true, la sonda funciona SIN la reserva compartida (solo observa).
+	diagnostics_only = false,
+
+	-- Intervalo de la sonda de diagnóstico, en segundos.
+	diagnostics_interval = 1,
+}

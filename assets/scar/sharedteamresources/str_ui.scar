@@ -1,0 +1,207 @@
+---------------------------------------------------------------------------------------------------
+-- SharedResources - Botones de bloqueo
+--
+-- Panel con un botón por recurso y un botón para todos. Solo lo ve el jugador
+-- local que pertenece a una reserva.
+--
+--   Clic en un recurso -> bloquea / desbloquea ese recurso para el equipo.
+--   Clic en "Todos"    -> si queda algo compartido, bloquea todo; si no, lo comparte todo.
+--
+-- Diseño por defecto ("column"): una columna pegada a la derecha del recuadro de
+-- recursos (abajo a la izquierda), un botón a la altura de cada recurso
+-- (comida, madera, oro, piedra, de arriba abajo) y "Todos" encima, a la altura
+-- de la población. Alternativa "row": todo en una fila.
+--
+-- Un clic es LOCAL: se envía por red con Network_CallEvent y el cambio real se
+-- aplica en STR_OnLockToggleNtw (str_main.scar), en todos los clientes a la vez.
+-- Este archivo nunca toca recursos.
+--
+-- Posición y tamaño: STR_CONFIG.ui (str_config.scar).
+---------------------------------------------------------------------------------------------------
+
+STR_UI = {
+	id = "STR_LockUI",
+	created = false,
+	pool = nil,
+	data = nil,
+	icons = {
+		"pack://application:,,,/WPFGUI;component/icons/resources/resource_food_icon.png",
+		"pack://application:,,,/WPFGUI;component/icons/resources/resource_wood_icon.png",
+		"pack://application:,,,/WPFGUI;component/icons/resources/resource_gold_icon.png",
+		"pack://application:,,,/WPFGUI;component/icons/resources/resource_stone_icon.png",
+	},
+	keys = { "food", "wood", "gold", "stone" },
+	text_shared = "Compartido",
+	text_locked = "Bloqueado",
+	text_lock_all = "Bloquear todo",
+	text_unlock_all = "Compartir todo",
+	opacity_shared = 1.0,
+	opacity_locked = 0.35,
+}
+
+local function STR_UI_Cfg()
+	local cfg = STR_CONFIG.ui or {}
+	return {
+		layout = cfg.layout or "column",
+		horizontal = cfg.horizontal or "Left",
+		vertical = cfg.vertical or "Bottom",
+		margin = cfg.margin or "198,0,0,16",
+		row_height = cfg.row_height or 39,
+		button_width = cfg.button_width or 118,
+	}
+end
+
+-- Botón de un recurso: icono pequeño + estado ("Compartido" / "Bloqueado").
+-- En columna el icono va a la izquierda del texto; en fila, encima.
+local function STR_UI_ResourceButton(index, key, cfg)
+	local b = "[" .. key
+	local size
+	local orientation
+	local spacing
+	if cfg.layout == "column" then
+		size = 'Width="' .. cfg.button_width .. '" Height="' .. (cfg.row_height - 2) .. '" Margin="0,0,0,2"'
+		orientation = "Horizontal"
+		spacing = 'Margin="0,0,6,0"'
+	else
+		size = 'Margin="2,0,2,0"'
+		orientation = "Vertical"
+		spacing = 'HorizontalAlignment="Center"'
+	end
+	return '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" ' .. size
+		.. ' MinHeight="0" MinWidth="0" Padding="4,0,4,0" HorizontalContentAlignment="Left"'
+		.. ' Command="{Binding [click]}" CommandParameter="' .. index .. '">'
+		.. '\n\t\t\t<StackPanel Orientation="' .. orientation .. '" VerticalAlignment="Center">'
+		.. '\n\t\t\t\t<Image Source="{Binding ' .. b .. '_icon]}" Opacity="{Binding ' .. b .. '_opacity]}"'
+		.. ' Width="22" Height="22" ' .. spacing .. ' />'
+		.. '\n\t\t\t\t<TextBlock Text="{Binding ' .. b .. '_state]}" FontSize="12"'
+		.. ' VerticalAlignment="Center" Foreground="White" />'
+		.. '\n\t\t\t</StackPanel>'
+		.. '\n\t\t</Button>'
+end
+
+local function STR_UI_AllButton(cfg)
+	local size
+	if cfg.layout == "column" then
+		size = 'Width="' .. cfg.button_width .. '" Height="' .. (cfg.row_height - 2) .. '" Margin="0,0,0,6"'
+	else
+		size = 'Margin="6,0,0,0" VerticalAlignment="Stretch"'
+	end
+	return '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" ' .. size
+		.. ' MinHeight="0" MinWidth="0" Padding="4,0,4,0" FontSize="12"'
+		.. ' Command="{Binding [click]}" CommandParameter="all" Content="{Binding [all_text]}" />'
+end
+
+function STR_UI_BuildXaml()
+	local cfg = STR_UI_Cfg()
+	local parts = {}
+	if cfg.layout == "column" then
+		-- "Todos" arriba (altura de la población) y los recursos debajo, en el
+		-- mismo orden que el recuadro del juego.
+		parts[#parts + 1] = STR_UI_AllButton(cfg)
+	end
+	for i, key in ipairs(STR_UI.keys) do
+		parts[#parts + 1] = STR_UI_ResourceButton(i, key, cfg)
+	end
+	if cfg.layout ~= "column" then
+		parts[#parts + 1] = STR_UI_AllButton(cfg)
+	end
+	local orientation = (cfg.layout == "column") and "Vertical" or "Horizontal"
+	return '<StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"'
+		.. ' xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"'
+		.. ' Orientation="' .. orientation .. '" SnapsToDevicePixels="True"'
+		.. ' HorizontalAlignment="' .. cfg.horizontal .. '"'
+		.. ' VerticalAlignment="' .. cfg.vertical .. '"'
+		.. ' Margin="' .. cfg.margin .. '">'
+		.. table.concat(parts)
+		.. '\n</StackPanel>'
+end
+
+-- Rellena la tabla de datos con el estado actual de la reserva.
+function STR_UI_BuildData(pool)
+	local data = STR_UI.data or { click = UI_CreateCommand("STR_UI_OnClick") }
+	for i, key in ipairs(STR_UI.keys) do
+		local rt = STR_RESOURCE_TYPES[i]
+		local shared = pool ~= nil and STR_Ledger_IsShared(pool, rt)
+		data[key .. "_icon"] = STR_UI.icons[i]
+		data[key .. "_state"] = shared and STR_UI.text_shared or STR_UI.text_locked
+		data[key .. "_opacity"] = shared and STR_UI.opacity_shared or STR_UI.opacity_locked
+	end
+	if pool ~= nil and STR_Ledger_AnyShared(pool) then
+		data.all_text = STR_UI.text_lock_all
+	else
+		data.all_text = STR_UI.text_unlock_all
+	end
+	return data
+end
+
+-- Crea el panel para la reserva del jugador local. Devuelve true si se creó.
+function STR_UI_Create(pool)
+	if pool == nil then
+		return false
+	end
+	if STR_UI.created then
+		return true
+	end
+	if UI_IsReplay ~= nil and UI_IsReplay() then
+		return false
+	end
+	local ok, err = pcall(function()
+		STR_UI.pool = pool
+		STR_UI.data = STR_UI_BuildData(pool)
+		UI_AddChild("ScarDefault", "XamlPresenter", STR_UI.id, {
+			IsHitTestVisible = true,
+			Xaml = STR_UI_BuildXaml(),
+			DataContext = UI_CreateDataContext(STR_UI.data),
+		})
+		STR_UI.created = true
+	end)
+	if not ok then
+		STR_LogError("No se pudo crear el panel de bloqueo:", tostring(err))
+		return false
+	end
+	return true
+end
+
+-- Actualiza los textos y la opacidad de los botones.
+function STR_UI_Refresh()
+	if not STR_UI.created then
+		return
+	end
+	-- Si el jugador local ya no está en la reserva (eliminado), se quita el panel.
+	local pool = STR_UI.pool
+	local still_member = false
+	for _, id in ipairs(pool.members) do
+		local player = STR_STATE.player_of[id]
+		if player ~= nil and player.isLocal then
+			still_member = true
+		end
+	end
+	if not still_member then
+		STR_UI_Remove()
+		return
+	end
+	local ok, err = pcall(function()
+		STR_UI.data = STR_UI_BuildData(pool)
+		UI_SetDataContext(STR_UI.id, STR_UI.data)
+	end)
+	if not ok then
+		STR_LogError("No se pudo actualizar el panel de bloqueo:", tostring(err))
+	end
+end
+
+function STR_UI_Remove()
+	if not STR_UI.created then
+		return
+	end
+	pcall(UI_Remove, STR_UI.id)
+	STR_UI.created = false
+end
+
+-- Callback del botón (LOCAL). parameter = "1".."4" o "all".
+function STR_UI_OnClick(parameter)
+	local me = Core_GetPlayersTableEntry(Game_GetLocalPlayer())
+	if me == nil or me.isEliminated then
+		return
+	end
+	Network_CallEvent(STR_NETWORK_LOCK_EVENT, tostring(me.index) .. "," .. tostring(parameter))
+end

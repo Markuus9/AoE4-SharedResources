@@ -1,0 +1,11 @@
+{
+  "name": "shared-team-resources-tests",
+  "private": true,
+  "description": "Pruebas fuera del juego del mod SharedTeamResources (AoE4). Solo para desarrollo.",
+  "scripts": {
+    "test": "node tools/run-tests.js"
+  },
+  "devDependencies": {
+    "fengari": "0.1.4"
+  }
+}

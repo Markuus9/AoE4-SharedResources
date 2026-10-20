@@ -1,0 +1,56 @@
+---------------------------------------------------------------------------------------------------
+-- SharedTeamResources - Registro
+--
+-- Escribe con print(). OJO: en la versión normal del juego estos mensajes NO
+-- se guardan en warnings.log ni se ven en ninguna consola (comprobado). Solo
+-- sirven en entornos de desarrollo. Para ver qué pasa en una partida normal,
+-- usa la opción del lobby "Avisos de depuración" (avisos en pantalla).
+-- Todas las líneas empiezan por "[STR]" para poder filtrarlas.
+--
+-- El registro no afecta a la simulación, así que es seguro en multijugador.
+---------------------------------------------------------------------------------------------------
+
+STR_LOG_ERROR = 1
+STR_LOG_EVENT = 2
+STR_LOG_TRACE = 3
+
+local function STR_Log_Write(text)
+	-- print() es lo que usa la plantilla oficial del Game Mode.
+	if print ~= nil then
+		print(text)
+	elseif Util_PrintObject ~= nil then
+		Util_PrintObject(text)
+	end
+end
+
+local function STR_Log_Format(...)
+	local parts = {}
+	local args = { ... }
+	for i = 1, select("#", ...) do
+		parts[#parts + 1] = tostring(args[i])
+	end
+	return table.concat(parts, " ")
+end
+
+function STR_Log(level, ...)
+	local current = (STR_CONFIG and STR_CONFIG.log_level) or STR_LOG_ERROR
+	if level <= current then
+		local tag = "[STR]"
+		if level == STR_LOG_ERROR then
+			tag = "[STR][!]"
+		end
+		STR_Log_Write(tag .. " " .. STR_Log_Format(...))
+	end
+end
+
+function STR_LogError(...) STR_Log(STR_LOG_ERROR, ...) end
+function STR_LogEvent(...) STR_Log(STR_LOG_EVENT, ...) end
+function STR_LogTrace(...) STR_Log(STR_LOG_TRACE, ...) end
+
+-- Redondea para que el log sea legible (los recursos pueden ser decimales).
+function STR_FormatAmount(value)
+	if value == nil then
+		return "nil"
+	end
+	return string.format("%.1f", value)
+end

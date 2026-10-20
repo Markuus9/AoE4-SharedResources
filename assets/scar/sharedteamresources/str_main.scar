@@ -1,0 +1,625 @@
+---------------------------------------------------------------------------------------------------
+-- SharedResources - Módulo principal
+--
+-- Conecta la contabilidad (str_ledger.scar) con el motor del juego.
+-- Lo importa el script principal del modo (assets/scar/SharedTeamResources.scar):
+--     import("sharedteamresources/str_main.scar")
+--
+-- Por qué funciona en multijugador:
+--   AoE4 usa simulación determinista (lockstep). Este script corre dentro de la
+--   simulación en todos los clientes a la vez, con los mismos datos, así que los
+--   Player_SetResource se aplican igual en todos. No hay que enviar nada por red.
+--   La única excepción son los botones de bloqueo: un clic ocurre en un solo
+--   cliente, así que se envía con Network_CallEvent (igual que los tributos) y
+--   el cambio se aplica en todos los clientes en el mismo tick.
+--   REGLA: nada de lo que afecte a la simulación puede depender del jugador local
+--   (Game_GetLocalPlayer, player.isLocal). Eso solo se usa para la UI.
+---------------------------------------------------------------------------------------------------
+
+import("sharedteamresources/str_config.scar")
+import("sharedteamresources/str_log.scar")
+import("sharedteamresources/str_ledger.scar")
+import("sharedteamresources/str_ui.scar")
+import("sharedteamresources/str_diagnostics.scar")
+
+STR_MODULE = "SharedTeamResources"
+
+-- Solo los cuatro recursos estándar. Los recursos especiales de algunas
+-- civilizaciones (p. ej. el aceite de oliva bizantino) no se comparten.
+STR_RESOURCE_TYPES = { RT_Food, RT_Wood, RT_Gold, RT_Stone }
+STR_RESOURCE_NAMES = {}
+STR_RESOURCE_NAMES[RT_Food] = "food"
+STR_RESOURCE_NAMES[RT_Wood] = "wood"
+STR_RESOURCE_NAMES[RT_Gold] = "gold"
+STR_RESOURCE_NAMES[RT_Stone] = "stone"
+
+-- Player_GetTeam devuelve >= 100 para jugadores sin equipo (igual que en AGS).
+STR_NO_TEAM_THRESHOLD = 100
+
+-- Intervalo usado si Rule_Add no existe en esta versión (8 ticks/s).
+STR_FALLBACK_TICK = 0.125
+
+-- Nombre del evento de red para los botones de bloqueo (función global).
+STR_NETWORK_LOCK_EVENT = "STR_OnLockToggleNtw"
+
+STR_STATE = {
+	pools = {},        -- lista de reservas (orden determinista)
+	pool_of = {},      -- pool_of[player_id] = reserva
+	player_of = {},    -- player_of[player_id] = entrada de PLAYERS
+	running = false,
+	network = false,   -- true si el evento de red de bloqueo está registrado
+}
+
+---------------------------------------------------------------------------------------------------
+-- Delegates (los llama el framework de cardinal.scar)
+---------------------------------------------------------------------------------------------------
+
+Core_RegisterModule(STR_MODULE)
+
+-- Registro del evento de red. Se hace en OnInit en todos los clientes y en el
+-- mismo orden, igual que diplomacy.scar.
+function SharedTeamResources_OnInit()
+	if not STR_CONFIG.enabled then
+		return
+	end
+	if Network_RegisterEvent ~= nil and Network_CallEvent ~= nil then
+		Network_RegisterEvent(STR_NETWORK_LOCK_EVENT)
+		STR_STATE.network = true
+	else
+		STR_LogError("Network_RegisterEvent no existe: los botones de bloqueo se desactivan")
+	end
+end
+
+-- Start se ejecuta cuando la partida ya está preparada ("fading up from black"):
+-- los recursos iniciales ya están asignados.
+function SharedTeamResources_Start()
+	if not STR_CONFIG.enabled then
+		STR_LogEvent("Desactivado (opción del lobby o configuración)")
+		STR_DebugNotify(STR_Message("debug_disabled"))
+		Core_UnregisterModule(STR_MODULE)
+		return
+	end
+
+	if STR_CONFIG.diagnostics then
+		STR_Diagnostics_Start()
+	end
+	if STR_CONFIG.diagnostics_only then
+		STR_LogEvent("Modo solo diagnóstico: la reserva compartida no se activa")
+		return
+	end
+
+	STR_BuildPools()
+	STR_DebugReportLocalTeam()
+	if #STR_STATE.pools == 0 then
+		STR_LogEvent("No hay equipos válidos para compartir recursos")
+		return
+	end
+
+	-- Primera sincronización inmediata para que todos vean el saldo común
+	-- desde el primer segundo.
+	STR_SyncAll()
+	STR_StartRule()
+
+	for _, pool in ipairs(STR_STATE.pools) do
+		STR_NotifyPool(pool, STR_Message("active"))
+	end
+
+	local local_pool = STR_GetLocalPool()
+	if STR_CONFIG.lock_ui and local_pool ~= nil then
+		if not STR_STATE.network then
+			STR_DebugNotify(STR_Message("debug_no_network"))
+		elseif STR_UI_Create(local_pool) then
+			STR_DebugNotify(STR_Message("debug_ui_ok"))
+		else
+			STR_DebugNotify(STR_Message("debug_ui_error"))
+		end
+	end
+end
+
+function SharedTeamResources_OnPlayerDefeated(player, reason)
+	if player == nil then
+		return
+	end
+	STR_RemovePlayer(player.id, "derrotado")
+end
+
+function SharedTeamResources_OnGameOver()
+	STR_StopRule()
+	STR_UI_Remove()
+	STR_DebugDump()
+end
+
+---------------------------------------------------------------------------------------------------
+-- Creación de reservas
+---------------------------------------------------------------------------------------------------
+
+function STR_IsHuman(player)
+	return Player_IsHuman(player.id) == true
+end
+
+function STR_IsEligible(player)
+	if player == nil or player.isEliminated then
+		return false
+	end
+	if not STR_CONFIG.ai_allies and not STR_IsHuman(player) then
+		return false
+	end
+	return true
+end
+
+function STR_AreMutualAllies(a, b)
+	return Player_ObserveRelationship(a, b) == R_ALLY
+		and Player_ObserveRelationship(b, a) == R_ALLY
+end
+
+function STR_AllMutualAllies(members)
+	for i = 1, #members do
+		for j = i + 1, #members do
+			if not STR_AreMutualAllies(members[i].id, members[j].id) then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+function STR_HasHuman(members)
+	for _, player in ipairs(members) do
+		if STR_IsHuman(player) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Agrupa a los jugadores elegibles por equipo y crea una reserva por equipo.
+function STR_BuildPools()
+	local teams = {}       -- teams[team_id] = { player, ... }
+	local team_order = {}  -- ids de equipo en orden de aparición (determinista)
+
+	for _, player in ipairs(PLAYERS) do
+		if STR_IsEligible(player) then
+			local team_id = Player_GetTeam(player.id)
+			if team_id ~= nil and team_id < STR_NO_TEAM_THRESHOLD then
+				if teams[team_id] == nil then
+					teams[team_id] = {}
+					table.insert(team_order, team_id)
+				end
+				table.insert(teams[team_id], player)
+			end
+		end
+	end
+
+	-- team_report[team_id] = { status = "pool"|"too_few"|"no_human"|"too_many"|"not_allies", count = n }
+	STR_STATE.team_report = {}
+	for _, team_id in ipairs(team_order) do
+		local members = teams[team_id]
+		local status
+		if not STR_HasHuman(members) then
+			status = "no_human"
+			STR_LogTrace("Equipo", team_id, "solo tiene IA: no comparte")
+		elseif #members < STR_CONFIG.min_players_per_pool then
+			status = "too_few"
+			STR_LogTrace("Equipo", team_id, "con", #members, "jugador(es) elegible(s): no comparte")
+		elseif #members > STR_CONFIG.max_players_per_pool then
+			status = "too_many"
+			STR_LogError("Equipo", team_id, "tiene", #members, "jugadores; el máximo es",
+				STR_CONFIG.max_players_per_pool, "- no comparte recursos")
+		elseif not STR_AllMutualAllies(members) then
+			status = "not_allies"
+			STR_LogError("Equipo", team_id, "no son aliados mutuos - no comparte recursos")
+		else
+			status = "pool"
+			STR_CreatePool(team_id, members)
+		end
+		STR_STATE.team_report[team_id] = { status = status, count = #members }
+	end
+end
+
+-- Aviso de depuración (solo para el jugador local) sobre su propio equipo.
+function STR_DebugReportLocalTeam()
+	if not STR_CONFIG.debug then
+		return
+	end
+	local me = nil
+	for _, player in ipairs(PLAYERS) do
+		if player.isLocal then
+			me = player
+		end
+	end
+	if me == nil then
+		return
+	end
+	local report = STR_STATE.team_report and STR_STATE.team_report[Player_GetTeam(me.id)]
+	if report == nil or report.status == "no_human" or report.status == "not_allies" then
+		STR_DebugNotify(STR_Message("debug_no_team"))
+	elseif report.status == "pool" then
+		STR_DebugNotify(STR_Message("debug_pool"), report.count)
+	elseif report.status == "too_many" then
+		STR_DebugNotify(STR_Message("debug_too_many"), report.count, STR_CONFIG.max_players_per_pool)
+	elseif report.status == "too_few" then
+		STR_DebugNotify(STR_Message("debug_too_few"), report.count)
+	end
+end
+
+function STR_CreatePool(team_id, members)
+	local pool = STR_Ledger_New(STR_RESOURCE_TYPES, "team_" .. tostring(team_id))
+	pool.team_id = team_id
+	for _, player in ipairs(members) do
+		STR_Ledger_AddMember(pool, player.id, STR_ReadPlayer(player.id))
+		STR_STATE.pool_of[player.id] = pool
+		STR_STATE.player_of[player.id] = player
+	end
+	table.insert(STR_STATE.pools, pool)
+	STR_LogEvent("Reserva creada:", pool.name, "miembros:", STR_DescribeMembers(pool),
+		"saldo inicial:", STR_DescribeBalance(pool))
+	return pool
+end
+
+function STR_RemovePlayer(player_id, reason)
+	local pool = STR_STATE.pool_of[player_id]
+	if pool == nil then
+		return
+	end
+	STR_Ledger_RemoveMember(pool, player_id)
+	STR_STATE.pool_of[player_id] = nil
+	STR_LogEvent("Jugador", STR_PlayerLabel(player_id), "sale de", pool.name, "(" .. tostring(reason) .. ")",
+		"saldo:", STR_DescribeBalance(pool))
+	-- Con un solo miembro la reserva sigue existiendo: el superviviente se queda
+	-- con el saldo común y la deuda pendiente, si la hay.
+	STR_UI_Refresh()
+end
+
+-- Reserva del jugador de este cliente (solo para UI), o nil.
+function STR_GetLocalPool()
+	for _, pool in ipairs(STR_STATE.pools) do
+		for _, id in ipairs(pool.members) do
+			local player = STR_STATE.player_of[id]
+			if player ~= nil and player.isLocal then
+				return pool
+			end
+		end
+	end
+	return nil
+end
+
+---------------------------------------------------------------------------------------------------
+-- Sincronización
+---------------------------------------------------------------------------------------------------
+
+function STR_StartRule()
+	if STR_STATE.running then
+		return
+	end
+	local interval = STR_CONFIG.sync_interval
+	if (interval == nil or interval <= 0) and Rule_Add ~= nil then
+		Rule_Add(STR_Rule_Sync)
+	else
+		if interval == nil or interval <= 0 then
+			interval = STR_FALLBACK_TICK
+		end
+		Rule_AddInterval(STR_Rule_Sync, interval)
+	end
+	STR_STATE.running = true
+	STR_LogEvent("Sincronización iniciada (intervalo:", STR_CONFIG.sync_interval, ")")
+end
+
+function STR_StopRule()
+	if STR_STATE.running and Rule_Exists(STR_Rule_Sync) then
+		Rule_Remove(STR_Rule_Sync)
+	end
+	STR_STATE.running = false
+end
+
+function STR_Rule_Sync()
+	STR_SyncAll()
+end
+
+function STR_SyncAll()
+	for _, pool in ipairs(STR_STATE.pools) do
+		STR_SyncPool(pool)
+	end
+end
+
+function STR_ReadPlayer(player_id)
+	local values = {}
+	for _, rt in ipairs(STR_RESOURCE_TYPES) do
+		values[rt] = Player_GetResource(player_id, rt)
+	end
+	return values
+end
+
+function STR_ReadMembers(pool)
+	local readings = {}
+	for _, id in ipairs(pool.members) do
+		readings[id] = STR_ReadPlayer(id)
+	end
+	return readings
+end
+
+function STR_SyncPool(pool)
+	-- Saca a los jugadores eliminados antes de leer: el motor puede haber
+	-- vaciado sus recursos y eso no debe descontarse de la reserva.
+	for i = #pool.members, 1, -1 do
+		local id = pool.members[i]
+		local player = STR_STATE.player_of[id]
+		if player ~= nil and player.isEliminated then
+			STR_RemovePlayer(id, "eliminado")
+		end
+	end
+	if #pool.members == 0 then
+		return
+	end
+
+	local readings = STR_ReadMembers(pool)
+	local targets, report = STR_Ledger_Sync(pool, readings)
+	if not report.changed then
+		return
+	end
+
+	for _, id in ipairs(pool.members) do
+		for _, rt in ipairs(STR_RESOURCE_TYPES) do
+			if targets[rt] ~= nil and readings[id][rt] ~= targets[rt] then
+				Player_SetResource(id, rt, targets[rt])
+			end
+		end
+	end
+
+	if STR_CONFIG.log_level >= STR_LOG_TRACE then
+		STR_LogTrace(pool.name, "sync", pool.stats.syncs, STR_DescribeDeltas(report.deltas),
+			"->", STR_DescribeBalance(pool))
+	end
+
+	for _, rt in ipairs(STR_RESOURCE_TYPES) do
+		if report.new_debt[rt] ~= nil then
+			STR_OnDebt(pool, rt, report.new_debt[rt])
+		end
+	end
+end
+
+-- Se llama cuando un gasto simultáneo deja el saldo en negativo.
+function STR_OnDebt(pool, rt, amount)
+	STR_LogEvent("DEUDA en", pool.name, STR_RESOURCE_NAMES[rt], STR_FormatAmount(amount),
+		"(gasto simultáneo). Se pagará con los próximos ingresos.")
+	STR_NotifyPool(pool, STR_Message("debt", rt), math.ceil(amount))
+end
+
+---------------------------------------------------------------------------------------------------
+-- Bloqueo de recursos
+---------------------------------------------------------------------------------------------------
+
+-- Bloquea (lock = true) o desbloquea (lock = false) un recurso de una reserva.
+-- Se ejecuta dentro de la simulación (llamado desde el evento de red).
+function STR_SetResourceShared(pool, rt, shared)
+	if STR_Ledger_IsShared(pool, rt) == shared then
+		return false
+	end
+	-- Primero se contabiliza todo lo ocurrido desde el último tick.
+	STR_SyncPool(pool)
+	if #pool.members == 0 then
+		return false
+	end
+	if shared then
+		local visible = STR_Ledger_Unlock(pool, rt, STR_ReadMembers(pool))
+		for _, id in ipairs(pool.members) do
+			Player_SetResource(id, rt, visible)
+		end
+	else
+		local parts = STR_Ledger_Lock(pool, rt)
+		for _, id in ipairs(pool.members) do
+			Player_SetResource(id, rt, parts[id])
+		end
+	end
+	return true
+end
+
+-- Acción pedida por un jugador: "1".."4" = un recurso, "all" = todos.
+-- Con "all": si queda alguno compartido se bloquean todos; si no, se desbloquean todos.
+-- Devuelve "locked" | "unlocked" | nil, y el tipo de recurso (nil si "all").
+function STR_ApplyLockAction(pool, action)
+	if action == "all" then
+		local shared = not STR_Ledger_AnyShared(pool)
+		local changed = false
+		for _, rt in ipairs(STR_RESOURCE_TYPES) do
+			if STR_SetResourceShared(pool, rt, shared) then
+				changed = true
+			end
+		end
+		if not changed then
+			return nil
+		end
+		return shared and "unlocked" or "locked", nil
+	end
+	local rt = STR_RESOURCE_TYPES[tonumber(action) or 0]
+	if rt == nil then
+		return nil
+	end
+	local shared = not STR_Ledger_IsShared(pool, rt)
+	if not STR_SetResourceShared(pool, rt, shared) then
+		return nil
+	end
+	return shared and "unlocked" or "locked", rt
+end
+
+-- Evento de red: lo reciben TODOS los clientes en el mismo tick.
+-- message = "<índice del jugador>,<acción>"
+function STR_OnLockToggleNtw(sender, message)
+	local parts = {}
+	for piece in string.gmatch(tostring(message), "([^,]+)") do
+		parts[#parts + 1] = piece
+	end
+	local player = Core_GetPlayersTableEntryFromIndex(tonumber(parts[1]))
+	if player == nil or player.isEliminated then
+		return
+	end
+	local pool = STR_STATE.pool_of[player.id]
+	if pool == nil then
+		return
+	end
+
+	local result, rt = STR_ApplyLockAction(pool, parts[2])
+	if result == nil then
+		return
+	end
+
+	local what = (rt and STR_RESOURCE_NAMES[rt]) or "todos"
+	STR_LogEvent(STR_PlayerLabel(player.id), result == "locked" and "bloquea" or "desbloquea",
+		what, "en", pool.name, "->", STR_DescribeBalance(pool))
+
+	local key
+	if rt ~= nil then
+		key = STR_Message(result, rt)
+	else
+		key = STR_Message(result .. "_all")
+	end
+	STR_NotifyPool(pool, key, Player_GetDisplayName(player.id))
+	STR_UI_Refresh()
+end
+
+---------------------------------------------------------------------------------------------------
+-- Avisos (solo local, no afecta a la simulación)
+---------------------------------------------------------------------------------------------------
+
+-- Devuelve la clave localizada ("$GUID:fila") de un aviso, o nil.
+--   STR_Message("active") / ("debt", rt) / ("locked", rt) / ("unlocked", rt)
+--   STR_Message("locked_all") / ("unlocked_all")
+function STR_Message(kind, rt)
+	local messages = STR_CONFIG.messages
+	if messages == nil then
+		return nil
+	end
+	local entry = messages[kind]
+	if rt ~= nil and type(entry) == "table" then
+		return entry[rt]
+	end
+	if type(entry) == "table" then
+		return nil
+	end
+	return entry
+end
+
+-- Muestra un aviso a los miembros de la reserva que juegan en este cliente.
+-- Se usa player.isLocal (entrada de PLAYERS) en vez de comparar con
+-- Game_GetLocalPlayer(): los ids son userdata y la comparación no es fiable.
+function STR_NotifyPool(pool, loc_key, param)
+	if not STR_CONFIG.notify or loc_key == nil then
+		return
+	end
+	for _, id in ipairs(pool.members) do
+		local player = STR_STATE.player_of[id]
+		if player ~= nil and player.isLocal then
+			STR_ShowEventCue(loc_key, param)
+			return
+		end
+	end
+end
+
+-- Aviso de depuración para el jugador de este cliente (solo con STR_CONFIG.debug).
+-- No depende de pertenecer a una reserva: sirve justo para saber por qué no la hay.
+function STR_DebugNotify(loc_key, ...)
+	if not STR_CONFIG.debug or loc_key == nil then
+		return
+	end
+	STR_ShowEventCue(loc_key, ...)
+end
+
+-- Event cue abajo a la derecha, con la misma llamada que usa la plantilla oficial.
+-- Va dentro de pcall: un fallo de UI nunca debe romper la partida.
+function STR_ShowEventCue(loc_key, ...)
+	local params = { ... }
+	local count = select("#", ...)
+	local ok, err = pcall(function()
+		local text
+		if count >= 2 then
+			text = Loc_FormatText(loc_key, params[1], params[2])
+		elseif count == 1 and params[1] ~= nil then
+			text = Loc_FormatText(loc_key, params[1])
+		else
+			text = Loc_FormatText(loc_key)
+		end
+		UI_CreateEventCueClickable(-1, 10, -1, 0, text, "", "low_priority", "",
+			"sfx_ui_event_queue_low_priority_play", 255, 255, 255, 255, ECV_Queue, nothing)
+	end)
+	if not ok then
+		STR_LogError("No se pudo mostrar el aviso", loc_key, tostring(err))
+	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Depuración (se puede llamar desde la consola de SCAR: STR_DebugDump())
+---------------------------------------------------------------------------------------------------
+
+-- Los ids de jugador son userdata; para el log se usa el número de ranura.
+function STR_PlayerLabel(id)
+	local player = STR_STATE.player_of[id]
+	if player ~= nil and player.slotIndex ~= nil then
+		return "p" .. tostring(player.slotIndex)
+	end
+	return tostring(id)
+end
+
+function STR_DescribeMembers(pool)
+	local parts = {}
+	for _, id in ipairs(pool.members) do
+		parts[#parts + 1] = STR_PlayerLabel(id)
+	end
+	return "[" .. table.concat(parts, ", ") .. "]"
+end
+
+function STR_DescribeBalance(pool)
+	local parts = {}
+	for _, rt in ipairs(pool.types) do
+		local text = STR_RESOURCE_NAMES[rt] .. "=" .. STR_FormatAmount(pool.balance[rt])
+		if not pool.shared[rt] then
+			text = text .. "(bloq)"
+		end
+		parts[#parts + 1] = text
+	end
+	return table.concat(parts, " ")
+end
+
+function STR_DescribeDeltas(deltas)
+	local parts = {}
+	for id, by_rt in pairs(deltas) do
+		for _, rt in ipairs(STR_RESOURCE_TYPES) do
+			if by_rt[rt] ~= nil then
+				local d = by_rt[rt]
+				local sign = "+"
+				if d < 0 then sign = "" end
+				parts[#parts + 1] = STR_PlayerLabel(id) .. ":" .. STR_RESOURCE_NAMES[rt]
+					.. sign .. STR_FormatAmount(d)
+			end
+		end
+	end
+	table.sort(parts)
+	return table.concat(parts, " ")
+end
+
+-- Vuelca el estado de todas las reservas al log.
+function STR_DebugDump()
+	STR_Log(STR_LOG_ERROR, "==== SharedResources: estado ====")
+	for _, pool in ipairs(STR_STATE.pools) do
+		local ok, bad_rt, diff = STR_Ledger_CheckInvariant(pool)
+		STR_Log(STR_LOG_ERROR, pool.name, "miembros", STR_DescribeMembers(pool),
+			"sincronizaciones", pool.stats.syncs, "deudas", pool.stats.debt_events)
+		for _, rt in ipairs(pool.types) do
+			STR_Log(STR_LOG_ERROR, "  ", STR_RESOURCE_NAMES[rt],
+				pool.shared[rt] and "compartido" or "bloqueado",
+				"saldo", STR_FormatAmount(pool.balance[rt]),
+				"inicial", STR_FormatAmount(pool.stats.initial[rt]),
+				"ingresos", STR_FormatAmount(pool.stats.income[rt]),
+				"gastos", STR_FormatAmount(pool.stats.spent[rt]),
+				"repartido", STR_FormatAmount(pool.stats.released[rt]),
+				"reincorporado", STR_FormatAmount(pool.stats.rejoined[rt]),
+				"deuda_max", STR_FormatAmount(pool.stats.max_debt[rt]))
+		end
+		if not ok then
+			STR_Log(STR_LOG_ERROR, "  INVARIANTE ROTO en", STR_RESOURCE_NAMES[bad_rt], "diferencia", diff)
+		end
+	end
+end
+
+-- Devuelve la reserva de un jugador (para extensiones).
+function STR_GetPoolForPlayer(player_id)
+	return STR_STATE.pool_of[player_id]
+end

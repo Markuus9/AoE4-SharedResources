@@ -1,0 +1,127 @@
+---------------------------------------------------------------------------------------------------
+-- SharedTeamResources - Sonda de diagnóstico (Fase 2)
+--
+-- Solo OBSERVA. No modifica recursos. Registra en el log:
+--   * Lista de jugadores: ranura, equipo, humano/IA, civilización, alianzas.
+--   * Recursos de cada jugador cada `diagnostics_interval` segundos y sus deltas.
+--   * Eventos de construcción y mejora terminadas (para correlacionar gastos).
+--
+-- Activar con STR_CONFIG.diagnostics = true (y diagnostics_only = true para
+-- ver el comportamiento original del juego sin la reserva compartida).
+--
+-- Busca "[STR][!] [diag]" en warnings.log o en la consola (Ctrl+Alt+~).
+---------------------------------------------------------------------------------------------------
+
+STR_DIAG = {
+	last = {},       -- last[label][rt]
+	started = false,
+}
+
+local function STR_Diag_Log(...)
+	STR_Log(STR_LOG_ERROR, "[diag]", ...)   -- nivel 1: se ve siempre que log_level >= 1
+end
+
+local function STR_Diag_Label(player)
+	if player == nil then
+		return "p?"
+	end
+	return "p" .. tostring(player.slotIndex or player.index or "?")
+end
+
+function STR_Diagnostics_Start()
+	if STR_DIAG.started then
+		return
+	end
+	STR_DIAG.started = true
+
+	STR_Diagnostics_DumpPlayers()
+	STR_Diagnostics_Sample()
+	Rule_AddInterval(STR_Diagnostics_Sample, STR_CONFIG.diagnostics_interval or 1)
+
+	-- Eventos globales. Si alguno no existe en esta versión, se ignora.
+	if GE_ConstructionComplete ~= nil then
+		Rule_AddGlobalEvent(STR_Diagnostics_OnConstructionComplete, GE_ConstructionComplete)
+	end
+	if GE_UpgradeComplete ~= nil then
+		Rule_AddGlobalEvent(STR_Diagnostics_OnUpgradeComplete, GE_UpgradeComplete)
+	end
+	STR_Diag_Log("Sonda iniciada")
+end
+
+function STR_Diagnostics_DumpPlayers()
+	for _, player in ipairs(PLAYERS) do
+		local team = Player_GetTeam(player.id)
+		local human = Player_IsHuman(player.id)
+		STR_Diag_Log("jugador", STR_Diag_Label(player),
+			"equipo", tostring(team),
+			"humano", tostring(human),
+			"civ", tostring(player.raceName),
+			"local", tostring(player.isLocal))
+		for _, other in ipairs(PLAYERS) do
+			if other ~= player then
+				local rel = Player_ObserveRelationship(player.id, other.id)
+				local name = "otra"
+				if rel == R_ALLY then name = "ALIADO"
+				elseif rel == R_ENEMY then name = "enemigo"
+				elseif rel == R_NEUTRAL then name = "neutral" end
+				STR_Diag_Log("   ", STR_Diag_Label(player), "->", STR_Diag_Label(other), name)
+			end
+		end
+	end
+end
+
+function STR_Diagnostics_Sample()
+	local types = { RT_Food, RT_Wood, RT_Gold, RT_Stone }
+	local names = { "food", "wood", "gold", "stone" }
+	for _, player in ipairs(PLAYERS) do
+		local key = STR_Diag_Label(player)
+		STR_DIAG.last[key] = STR_DIAG.last[key] or {}
+		local parts = {}
+		local changed = false
+		for i, rt in ipairs(types) do
+			local value = Player_GetResource(player.id, rt)
+			local previous = STR_DIAG.last[key][rt]
+			local text = names[i] .. "=" .. STR_FormatAmount(value)
+			if previous ~= nil and value ~= previous then
+				local d = value - previous
+				local sign = "+"
+				if d < 0 then sign = "" end
+				text = text .. "(" .. sign .. STR_FormatAmount(d) .. ")"
+				changed = true
+			end
+			parts[#parts + 1] = text
+			STR_DIAG.last[key][rt] = value
+		end
+		if changed or STR_CONFIG.log_level >= STR_LOG_TRACE then
+			STR_Diag_Log(key, table.concat(parts, " "))
+		end
+	end
+end
+
+-- Según la plantilla oficial, `context` trae al menos .player y .pbg.
+-- Se vuelca entero para descubrir el resto de campos.
+local function STR_Diagnostics_DumpContext(label, context)
+	local parts = {}
+	if type(context) == "table" then
+		if context.player ~= nil and Core_GetPlayersTableEntry ~= nil then
+			parts[#parts + 1] = "jugador=" .. STR_Diag_Label(Core_GetPlayersTableEntry(context.player))
+		end
+		for k, v in pairs(context) do
+			parts[#parts + 1] = tostring(k) .. "=" .. tostring(v)
+		end
+		table.sort(parts)
+	else
+		parts[1] = tostring(context)
+	end
+	STR_Diag_Log(label, table.concat(parts, " "))
+	-- Muestreo inmediato para ver el gasto asociado al evento.
+	STR_Diagnostics_Sample()
+end
+
+function STR_Diagnostics_OnConstructionComplete(context)
+	STR_Diagnostics_DumpContext("evento ConstructionComplete", context)
+end
+
+function STR_Diagnostics_OnUpgradeComplete(context)
+	STR_Diagnostics_DumpContext("evento UpgradeComplete", context)
+end
