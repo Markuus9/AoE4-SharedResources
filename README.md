@@ -128,3 +128,7 @@ El nombre visible es **Shared Resources** y el del modo, **Shared Resources (Est
 - [Introduction to Scripting](https://support.ageofempires.com/hc/en-us/articles/4438362112660-Introduction-to-Scripting)
 - Documentación SCAR incluida con el juego: `Age of Empires IV\scardocs\`
 - [Advanced Game Settings (GitHub)](https://github.com/Woprok/AOE4-AdvancedGameSettings)
+
+## Licencia
+
+[MIT](LICENSE). Age of Empires IV y sus recursos (iconos, estilos, scripts del juego) pertenecen a sus propietarios; este repositorio solo contiene el código y los recursos propios del mod.
