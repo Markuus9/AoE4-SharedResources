@@ -37,23 +37,26 @@ Cualquier cosa que cambie los recursos de un jugador termina como un delta: reco
 
 ## Bloqueo de recursos
 
-| Acción | Qué pasa |
-|---|---|
-| **Bloquear** un recurso | Se sincroniza lo pendiente. El saldo visible se reparte **en proporción a los aportes positivos** de cada miembro: el que gastó más de lo que aportó no recibe nada. Si nadie tiene aporte positivo, se reparte a partes iguales. A partir de ahí, cada uno tiene su propio saldo y la reserva no toca ese recurso. |
-| Bloquear con **deuda** | Los dos quedan en 0 y la deuda sigue pendiente en la reserva. |
-| **Desbloquear** | Los saldos de los dos se suman a la reserva, menos la deuda pendiente. Cada uno empieza aportando lo que traía. |
-| **Bloquear todo** | Si queda algún recurso compartido, se bloquean todos. Si no queda ninguno, se comparten todos. |
+El bloqueo es **por jugador y por recurso** (`pool.out[id][rt]`): cada jugador decide qué comparte él, y solo le afecta a él.
 
-Cualquiera de los dos miembros puede bloquear o desbloquear. El estado es por equipo.
+| Acción del jugador P sobre el recurso R | Qué pasa |
+|---|---|
+| **Dejar de compartir** | Se sincroniza lo pendiente. Se calcula la parte justa de cada uno de los que comparten R: el saldo visible repartido **en proporción a los aportes positivos** (a partes iguales si nadie tiene aporte positivo). P se lleva **su parte**, que nunca supera lo que aportó. Si gastó más de lo que aportó, se lleva 0. Los demás siguen compartiendo el resto y cada uno pasa a aportar exactamente su parte justa. |
+| Dejar de compartir con **deuda** | P se lleva 0; la deuda se la reparten a partes iguales los que siguen compartiendo. Si P era el último, la deuda queda pendiente en la reserva. |
+| **Volver a compartir** | El saldo propio de P se suma a la reserva y P empieza aportando lo que trae. Si no compartía nadie y había deuda pendiente, la asume P. |
+| **Todo** | Si P comparte algún recurso, deja de compartirlos todos; si no comparte ninguno, vuelve a compartirlos todos. |
+
+Con 2 jugadores, que uno deje de compartir equivale a que cada uno tenga lo suyo: el otro se queda solo en la reserva de ese recurso. Ningún jugador puede cambiar el estado de otro.
 
 ### Invariantes
 
 ```
 balance == inicial + ingresos − gastos − repartido + reincorporado
-Σ aporte_j == balance        (en recursos compartidos)
+Σ aporte_j (de los que comparten R) == balance        (si alguien comparte R)
+balance <= 0                                          (si nadie comparte R: solo deuda pendiente)
 ```
 
-`STR_Ledger_CheckInvariant` los comprueba. `STR_DebugDump()` los vuelca al log al final de la partida. La prueba aleatoria comprueba durante 5.000 ticks, con bloqueos al azar, que lo que tienen los jugadores más la deuda coincide con una contabilidad externa independiente.
+`STR_Ledger_CheckInvariant` los comprueba. La prueba aleatoria comprueba durante 5.000 ticks, con 3 jugadores y bloqueos al azar, que la reserva más los saldos propios de quien no comparte coincide con una contabilidad externa independiente.
 
 ## Red: botones de bloqueo
 
@@ -74,12 +77,19 @@ Clic (solo en el ordenador de quien pulsa)
 
 ## Panel de botones (XAML)
 
-[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` una fila de 5 botones con el estilo oficial `PrimaryRaisedTextButton`:
+[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` una columna de 5 botones:
 
-- Uno por recurso: icono oficial del recurso (`icons/resources/resource_*_icon.png`) y el texto "Compartido" o "Bloqueado". El icono se atenúa al bloquear.
-- Uno general: "Bloquear todo" o "Compartir todo".
+- Uno general arriba: "Bloquear todo" o "Compartir todo" (muestra lo que hará al pulsarlo).
+- Uno por recurso: candado oficial abierto (`images/fe/fe_unlocked_icon.png`) y "Compartido" en verde, o candado cerrado (`images/fe/fe_locked_icon.png`) y "Bloqueado" en naranja.
 
-Solo lo ve el jugador local que pertenece a una reserva. Se actualiza con `UI_SetDataContext` y se quita si el jugador es eliminado o termina la partida. La posición se configura en `STR_CONFIG.ui`.
+Cada botón es un `Grid` con dos capas:
+
+1. Un `Button` con el estilo oficial `PrimaryRaisedTextButton` y `Content=""`: pone el fondo, el efecto al pasar el ratón y recibe el clic.
+2. Encima, un `StackPanel` con `IsHitTestVisible="False"`, para que el clic llegue al botón. Contiene la `Image` del candado y un `TextBlock` con el estilo oficial `HUDGray80BodyTextBlock14ptStyle` y el color enlazado.
+
+Se hace así porque la plantilla de `PrimaryRaisedTextButton` solo dibuja `Content` como texto (en mayúsculas y recortado) e ignora imágenes. Por eso la primera versión salía vacía o con «BLOQUE...».
+
+Cada jugador local ve **su** estado. El panel se actualiza con `UI_SetDataContext` y se quita si el jugador es eliminado o termina la partida. La posición se configura en `STR_CONFIG.ui`.
 
 ## Determinismo
 

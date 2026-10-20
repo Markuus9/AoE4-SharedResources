@@ -272,15 +272,21 @@ end
 
 -- Reserva del jugador de este cliente (solo para UI), o nil.
 function STR_GetLocalPool()
+	local pool = STR_GetLocalMember()
+	return pool
+end
+
+-- Reserva e id del jugador de este cliente (solo para UI), o nil.
+function STR_GetLocalMember()
 	for _, pool in ipairs(STR_STATE.pools) do
 		for _, id in ipairs(pool.members) do
 			local player = STR_STATE.player_of[id]
 			if player ~= nil and player.isLocal then
-				return pool
+				return pool, id
 			end
 		end
 	end
-	return nil
+	return nil, nil
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -357,9 +363,12 @@ function STR_SyncPool(pool)
 		return
 	end
 
+	-- Solo se escribe a quien comparte ese recurso: los que lo tienen bloqueado
+	-- conservan su propio saldo.
 	for _, id in ipairs(pool.members) do
 		for _, rt in ipairs(STR_RESOURCE_TYPES) do
-			if targets[rt] ~= nil and readings[id][rt] ~= targets[rt] then
+			if targets[rt] ~= nil and STR_Ledger_IsSharing(pool, id, rt)
+				and readings[id][rt] ~= targets[rt] then
 				Player_SetResource(id, rt, targets[rt])
 			end
 		end
@@ -388,40 +397,43 @@ end
 -- Bloqueo de recursos
 ---------------------------------------------------------------------------------------------------
 
--- Bloquea (lock = true) o desbloquea (lock = false) un recurso de una reserva.
--- Se ejecuta dentro de la simulación (llamado desde el evento de red).
-function STR_SetResourceShared(pool, rt, shared)
-	if STR_Ledger_IsShared(pool, rt) == shared then
+-- El jugador `id` deja de compartir (shared = false) o vuelve a compartir
+-- (shared = true) un recurso. Solo le afecta a él: los demás miembros siguen
+-- compartiendo entre ellos. Se ejecuta dentro de la simulación (evento de red).
+function STR_SetResourceShared(pool, id, rt, shared)
+	if STR_Ledger_IsSharing(pool, id, rt) == shared then
 		return false
 	end
 	-- Primero se contabiliza todo lo ocurrido desde el último tick.
 	STR_SyncPool(pool)
-	if #pool.members == 0 then
+	if not STR_Ledger_HasMember(pool, id) then
 		return false
 	end
 	if shared then
-		local visible = STR_Ledger_Unlock(pool, rt, STR_ReadMembers(pool))
-		for _, id in ipairs(pool.members) do
-			Player_SetResource(id, rt, visible)
+		local visible = STR_Ledger_Unlock(pool, id, rt, Player_GetResource(id, rt))
+		for _, other in ipairs(STR_Ledger_Sharing(pool, rt)) do
+			Player_SetResource(other, rt, visible)
 		end
 	else
-		local parts = STR_Ledger_Lock(pool, rt)
-		for _, id in ipairs(pool.members) do
-			Player_SetResource(id, rt, parts[id])
+		local mine, others = STR_Ledger_Lock(pool, id, rt)
+		Player_SetResource(id, rt, mine)
+		for _, other in ipairs(STR_Ledger_Sharing(pool, rt)) do
+			Player_SetResource(other, rt, others)
 		end
 	end
 	return true
 end
 
--- Acción pedida por un jugador: "1".."4" = un recurso, "all" = todos.
--- Con "all": si queda alguno compartido se bloquean todos; si no, se desbloquean todos.
+-- Acción pedida por un jugador: "1".."4" = un recurso, "all" = todos los suyos.
+-- Con "all": si ese jugador comparte alguno, deja de compartirlos todos; si no
+-- comparte ninguno, vuelve a compartirlos todos.
 -- Devuelve "locked" | "unlocked" | nil, y el tipo de recurso (nil si "all").
-function STR_ApplyLockAction(pool, action)
+function STR_ApplyLockAction(pool, id, action)
 	if action == "all" then
-		local shared = not STR_Ledger_AnyShared(pool)
+		local shared = not STR_Ledger_AnySharing(pool, id)
 		local changed = false
 		for _, rt in ipairs(STR_RESOURCE_TYPES) do
-			if STR_SetResourceShared(pool, rt, shared) then
+			if STR_SetResourceShared(pool, id, rt, shared) then
 				changed = true
 			end
 		end
@@ -434,8 +446,8 @@ function STR_ApplyLockAction(pool, action)
 	if rt == nil then
 		return nil
 	end
-	local shared = not STR_Ledger_IsShared(pool, rt)
-	if not STR_SetResourceShared(pool, rt, shared) then
+	local shared = not STR_Ledger_IsSharing(pool, id, rt)
+	if not STR_SetResourceShared(pool, id, rt, shared) then
 		return nil
 	end
 	return shared and "unlocked" or "locked", rt
@@ -457,7 +469,7 @@ function STR_OnLockToggleNtw(sender, message)
 		return
 	end
 
-	local result, rt = STR_ApplyLockAction(pool, parts[2])
+	local result, rt = STR_ApplyLockAction(pool, player.id, parts[2])
 	if result == nil then
 		return
 	end
@@ -569,9 +581,10 @@ end
 function STR_DescribeBalance(pool)
 	local parts = {}
 	for _, rt in ipairs(pool.types) do
+		local sharing = #STR_Ledger_Sharing(pool, rt)
 		local text = STR_RESOURCE_NAMES[rt] .. "=" .. STR_FormatAmount(pool.balance[rt])
-		if not pool.shared[rt] then
-			text = text .. "(bloq)"
+		if sharing < #pool.members then
+			text = text .. "(" .. sharing .. "/" .. #pool.members .. ")"
 		end
 		parts[#parts + 1] = text
 	end
@@ -604,7 +617,7 @@ function STR_DebugDump()
 			"sincronizaciones", pool.stats.syncs, "deudas", pool.stats.debt_events)
 		for _, rt in ipairs(pool.types) do
 			STR_Log(STR_LOG_ERROR, "  ", STR_RESOURCE_NAMES[rt],
-				pool.shared[rt] and "compartido" or "bloqueado",
+				"comparten", #STR_Ledger_Sharing(pool, rt) .. "/" .. #pool.members,
 				"saldo", STR_FormatAmount(pool.balance[rt]),
 				"inicial", STR_FormatAmount(pool.stats.initial[rt]),
 				"ingresos", STR_FormatAmount(pool.stats.income[rt]),

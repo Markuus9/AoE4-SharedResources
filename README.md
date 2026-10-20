@@ -1,8 +1,8 @@
 # Shared Resources — Age of Empires IV
 
-Mod de tipo **Game Mode** para **Age of Empires IV en PC (Steam)**. Es el **modo estándar oficial** con una diferencia: los aliados de cada equipo comparten una única reserva de comida, madera, oro y piedra. Durante la partida, cualquiera de los dos puede **bloquear** un recurso, o todos, para dejar de compartirlo, y desbloquearlo después.
+Mod de tipo **Game Mode** para **Age of Empires IV en PC (Steam)**. Es el **modo estándar oficial** con una diferencia: los aliados de cada equipo comparten una única reserva de comida, madera, oro y piedra. Durante la partida, cada jugador puede **dejar de compartir** un recurso, o todos, quedándose con lo que aportó, y volver a compartirlo después. El bloqueo es **por jugador**: los demás siguen compartiendo entre ellos.
 
-**Estado:** implementado y probado **fuera del juego** con 58 pruebas automáticas sobre un motor simulado. La reserva compartida ya se probó en el juego. Faltan por probar en el juego los botones de bloqueo y las opciones nuevas del lobby; ver [docs/PRUEBAS_EN_JUEGO.md](docs/PRUEBAS_EN_JUEGO.md).
+**Estado:** implementado y probado **fuera del juego** con 62 pruebas automáticas sobre un motor simulado. La reserva compartida ya se probó en el juego. Faltan por probar en el juego los botones de bloqueo y las opciones nuevas del lobby; ver [docs/PRUEBAS_EN_JUEGO.md](docs/PRUEBAS_EN_JUEGO.md).
 
 ## Qué incluye
 
@@ -19,12 +19,13 @@ Las victorias, la edad, la velocidad, el mapa y la diplomacia los gestiona el pr
 
 **En la partida**
 
-- Una reserva común por equipo. Todo lo que recolecta o gasta cualquiera de los dos sale de ella.
-- Una columna de botones **pegada al recuadro de recursos** (abajo a la izquierda), uno a la altura de cada recurso: icono más "Compartido" o "Bloqueado". Pulsarlo bloquea o desbloquea ese recurso para el equipo.
-- Un botón **Bloquear todo / Compartir todo**.
-- Al bloquear, el saldo común se reparte **según lo que ha aportado cada uno**: lo recolectado menos lo gastado, incluidos los recursos iniciales. Mientras está bloqueado, cada uno tiene lo suyo.
-- Al desbloquear, los saldos de los dos vuelven a sumarse.
-- Avisos en pantalla al activarse la reserva, cuando hay deuda por un gasto simultáneo y cuando el aliado bloquea o desbloquea algo.
+- Una reserva común por equipo. Todo lo que recolecta o gasta cualquiera de los que comparten sale de ella.
+- Una columna de botones **pegada al recuadro de recursos** (abajo a la izquierda), uno a la altura de cada recurso, con el **candado oficial del juego** (abierto o cerrado) y "Compartido" en verde o "Bloqueado" en naranja. Cada jugador ve y controla **solo su propio estado**.
+- Un botón **Bloquear todo / Compartir todo** para todos tus recursos a la vez.
+- Al dejar de compartir, te llevas **tu parte según lo que aportaste**: lo recolectado menos lo gastado, incluidos los recursos iniciales. **Nunca más de lo que aportaste.** Si gastaste más de lo que aportaste, no te llevas nada.
+- Los demás siguen compartiendo lo que queda. Con 3 o 4 jugadores, si uno se sale, los otros siguen juntos.
+- Al volver a compartir, tu saldo se suma otra vez a la reserva.
+- Avisos en pantalla al activarse la reserva, cuando hay deuda por un gasto simultáneo y cuando un aliado deja o vuelve a compartir algo.
 
 **Quién comparte**
 
@@ -56,7 +57,7 @@ SharedTeamResources/
 │  │  │  └─ str_diagnostics.scar           sonda de diagnóstico (solo observa)
 │  │  └─ winconditions/SharedTeamResources.rdo   opciones del lobby
 │  └─ locdb/SharedTeamResources_es.csv     72 textos en español
-├─ tests/                                  motor simulado + 58 pruebas
+├─ tests/                                  motor simulado + 62 pruebas
 ├─ tools/
 │  ├─ run-tests.js                         ejecuta las pruebas sin Lua instalado
 │  ├─ genrdo.js                            regenera el .rdo y el .csv de opciones
@@ -99,12 +100,12 @@ lua tests/run_tests.lua
 Las pruebas cubren:
 
 - los casos de aceptación;
-- el bloqueo: reparto según lo aportado, deuda pendiente, bloquear todo y compartir todo;
+- el bloqueo por jugador: reparto según lo aportado (nunca más), los demás siguen compartiendo, 3 jugadores, deuda pendiente, bloquear todo y compartir todo;
 - los clics enviados por red y aplicados en el siguiente tick;
 - el panel de botones;
 - las opciones del lobby: recursos y aldeanos iniciales;
 - los avisos;
-- 5.000 ticks aleatorios, con bloqueos, sin crear ni perder recursos.
+- 5.000 ticks aleatorios con 3 jugadores y bloqueos al azar, sin crear ni perder recursos.
 
 **No** sustituyen a las pruebas en el juego.
 

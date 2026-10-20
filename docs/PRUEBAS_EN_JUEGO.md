@@ -29,12 +29,13 @@ Partida: tú + IA aliada contra IA.
 ## 2. Botones de bloqueo
 
 - [ ] La columna de botones aparece pegada a la derecha del recuadro de recursos, cada botón a la altura de su recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones-junto-a-los-recursos)).
-- [ ] Hay cuatro iconos de recursos con "Compartido" y un botón "Bloquear todo".
+- [ ] Cada botón muestra un candado abierto y "Compartido" en verde; arriba, "Bloquear todo".
 - [ ] Clic en oro:
-  - [ ] el icono se atenúa y pone "Bloqueado";
-  - [ ] aparece el aviso "… ha bloqueado el oro";
-  - [ ] cada uno tiene su parte según lo aportado.
+  - [ ] el candado se cierra y pone "Bloqueado" en naranja;
+  - [ ] aparece el aviso "… deja de compartir el oro y se queda con lo que aportó";
+  - [ ] te quedas con lo que aportaste, no más.
 - [ ] Con el oro bloqueado, lo que recolectas no le llega al aliado y viceversa. Los demás recursos siguen compartidos.
+- [ ] **Con 3 jugadores** (tú + 2 IA aliadas): bloquea el oro. Las dos IA siguen compartiendo el oro entre ellas, y lo que recolectan no te llega.
 - [ ] Clic otra vez: se vuelven a sumar.
 - [ ] "Bloquear todo" y "Compartir todo".
 - [ ] Tras varios bloqueos y desbloqueos, la suma de lo que tenéis cuadra con lo recolectado menos lo gastado (no aparecen ni desaparecen recursos).
@@ -47,9 +48,9 @@ Partida personalizada: A + B contra IA, con "Avisos de depuración" activado.
 |---|---|---|---|
 | 1 | A recolecta, B gasta | B gasta lo que recolectó A | [ ] |
 | 2 | Ambos gastan a la vez con el saldo justo | Aviso de deuda; se paga después | [ ] |
-| 3 | A bloquea la comida | B ve el aviso y su botón cambia también | [ ] |
-| 4 | B desbloquea lo que bloqueó A | Funciona desde cualquiera de los dos | [ ] |
-| 5 | Los dos pulsan el mismo botón casi a la vez | Queda en un estado coherente, igual en ambos (bloqueado y desbloqueado = vuelve a compartido) | [ ] |
+| 3 | A deja de compartir la comida | B ve el aviso; el botón de B no cambia (es el estado de B) | [ ] |
+| 4 | B pulsa la comida | B también deja de compartirla; no desbloquea a A | [ ] |
+| 5 | Los dos pulsan el mismo botón casi a la vez | Cada uno queda con su propio estado, igual en los dos ordenadores | [ ] |
 | 6 | Bloquear todo y seguir jugando 10 minutos | Cada uno con su economía, sin desync | [ ] |
 | 7 | Un jugador se rinde o es eliminado | El otro conserva el saldo; el panel del eliminado desaparece | [ ] |
 | 8 | Partida de 20 minutos o más con varios bloqueos | **Sin desync** | [ ] |

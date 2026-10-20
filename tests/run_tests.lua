@@ -81,6 +81,9 @@ end
 
 local function pool1() return STR_GetPoolForPlayer(Mock_Player(1).id) end
 
+-- ¿El jugador n comparte ese recurso?
+local function sharing(n, rt) return STR_Ledger_IsSharing(pool1(), Mock_Player(n).id, rt) end
+
 -- Ejecuta una acción de bloqueo como si llegara por red desde el jugador n.
 local function lock_action(n, action)
 	STR_OnLockToggleNtw(Mock_Player(n).id, tostring(n) .. "," .. action)
@@ -259,13 +262,14 @@ test("equipos de 3 y 4 comparten (máximo por defecto: 4)", function()
 	eq(Mock_Res(4, RT_Gold), 400, "4 humanos")
 end)
 
-test("con 3 jugadores, bloquear reparte según lo aportado entre los 3", function()
+test("con 3 jugadores, quien bloquea se lleva su parte y los otros 2 siguen con el resto", function()
 	start({ { team = 1, gold = 0 }, { team = 1, gold = 0 }, { team = 1, gold = 0 } })
 	Mock_Gather(1, RT_Gold, 600); Mock_Gather(2, RT_Gold, 300); Mock_Gather(3, RT_Gold, 100); Mock_Tick()
 	ok(Mock_Spend(3, RT_Gold, 500)); Mock_Tick()      -- aportes: 600, 300, -400 -> quedan 500
 	lock_action(1, "3")
-	eq(Mock_Res(1, RT_Gold), 500 * 600 / 900, "A"); eq(Mock_Res(2, RT_Gold), 500 * 300 / 900, "B")
-	eq(Mock_Res(3, RT_Gold), 0, "C gastó más de lo que aportó")
+	eq(Mock_Res(1, RT_Gold), 500 * 600 / 900, "A se lleva su parte (proporcional a lo aportado)")
+	eq(Mock_Res(2, RT_Gold), 500 * 300 / 900, "B y C siguen compartiendo lo que queda")
+	eq(Mock_Res(3, RT_Gold), 500 * 300 / 900, "C ve lo mismo que B")
 	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
 end)
 
@@ -320,8 +324,8 @@ test("bloquear: el saldo se reparte según lo aportado", function()
 	Mock_Gather(1, RT_Gold, 800); Mock_Gather(2, RT_Gold, 200); Mock_Tick()
 	eq(Mock_Res(1, RT_Gold), 1000, "antes, ambos ven 1000")
 	lock_action(1, "3")
-	ok(not STR_Ledger_IsShared(pool1(), RT_Gold), "oro bloqueado")
-	eq(Mock_Res(1, RT_Gold), 800, "A recibe lo que aportó"); eq(Mock_Res(2, RT_Gold), 200, "B recibe lo suyo")
+	ok(not sharing(1, RT_Gold), "A deja de compartir el oro"); ok(sharing(2, RT_Gold), "B no se ve afectado")
+	eq(Mock_Res(1, RT_Gold), 800, "A recibe lo que aportó"); eq(Mock_Res(2, RT_Gold), 200, "B se queda lo suyo")
 	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
 end)
 
@@ -356,15 +360,61 @@ test("bloqueado: cada uno recolecta y gasta lo suyo, el resto sigue compartido",
 	eq(Mock_Res(1, RT_Gold), 150, "el gasto de B no afecta a A")
 end)
 
-test("desbloquear: los saldos vuelven a sumarse", function()
+test("desbloquear: el saldo propio vuelve a sumarse", function()
 	start(coop(100, 100))
 	lock_action(1, "3")
 	Mock_Gather(1, RT_Gold, 400); Mock_Tick()
-	lock_action(2, "3")                    -- cualquiera de los dos puede desbloquear
-	ok(STR_Ledger_IsShared(pool1(), RT_Gold), "oro compartido")
+	lock_action(1, "3")                    -- A vuelve a compartir
+	ok(sharing(1, RT_Gold), "A comparte otra vez")
 	eq(Mock_Res(1, RT_Gold), 600, "A"); eq(Mock_Res(2, RT_Gold), 600, "B")
 	Mock_Gather(2, RT_Gold, 10); Mock_Tick()
 	eq(Mock_Res(1, RT_Gold), 610, "vuelve a sincronizar")
+	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
+end)
+
+test("cada jugador controla solo lo suyo: el aliado no puede desbloquearte", function()
+	start(coop(100, 300))
+	lock_action(1, "3")                    -- A deja de compartir el oro
+	lock_action(2, "3")                    -- B pulsa el oro: deja de compartirlo él también
+	ok(not sharing(1, RT_Gold), "A sigue sin compartir"); ok(not sharing(2, RT_Gold), "B tampoco")
+	eq(Mock_Res(1, RT_Gold), 100, "A"); eq(Mock_Res(2, RT_Gold), 300, "B")
+	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
+end)
+
+test("nunca te llevas más de lo que aportaste", function()
+	start(coop(0, 0))
+	Mock_Gather(1, RT_Wood, 300); Mock_Gather(2, RT_Wood, 700); Mock_Tick()   -- reserva 1000
+	lock_action(1, "2")
+	eq(Mock_Res(1, RT_Wood), 300, "A aportó 300, no la mitad de 1000"); eq(Mock_Res(2, RT_Wood), 700, "B")
+	start(coop(0, 0))
+	Mock_Gather(1, RT_Wood, 800); Mock_Gather(2, RT_Wood, 200); Mock_Tick()
+	ok(Mock_Spend(1, RT_Wood, 700)); Mock_Tick()      -- A gastó: aporte A 100, B 200; quedan 300
+	lock_action(1, "2")
+	eq(Mock_Res(1, RT_Wood), 100, "A solo se lleva su aporte neto"); eq(Mock_Res(2, RT_Wood), 200, "B")
+end)
+
+test("3 jugadores: si uno bloquea, los otros dos siguen compartiendo entre ellos", function()
+	start({ { team = 1, gold = 100, food = 100 }, { team = 1, gold = 100, food = 100 }, { team = 1, gold = 100, food = 100 } })
+	lock_action(1, "3")
+	eq(Mock_Res(1, RT_Gold), 100, "A con lo suyo"); eq(Mock_Res(2, RT_Gold), 200, "B y C: 200 entre los dos")
+	Mock_Gather(2, RT_Gold, 50); Mock_Tick()
+	eq(Mock_Res(3, RT_Gold), 250, "lo que recolecta B le llega a C"); eq(Mock_Res(1, RT_Gold), 100, "pero no a A")
+	Mock_Gather(1, RT_Gold, 20); Mock_Tick()
+	eq(Mock_Res(2, RT_Gold), 250, "lo que recolecta A no llega a B ni a C")
+	eq(Mock_Res(1, RT_Food), 300, "la comida sigue compartida por los 3")
+	lock_action(1, "3")
+	eq(Mock_Res(1, RT_Gold), 370, "A vuelve: 120 + 250"); eq(Mock_Res(3, RT_Gold), 370, "C")
+	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
+end)
+
+test("si todos dejan de compartir un recurso y uno vuelve, recupera solo lo suyo", function()
+	start(coop(100, 300))
+	lock_action(1, "4"); lock_action(2, "4")
+	Mock_Gather(1, RT_Stone, 50); Mock_Tick()
+	lock_action(1, "4")
+	eq(Mock_Res(1, RT_Stone), 150, "A comparte solo consigo mismo"); eq(Mock_Res(2, RT_Stone), 300, "B intacto")
+	lock_action(2, "4")
+	eq(Mock_Res(1, RT_Stone), 450, "B vuelve"); eq(Mock_Res(2, RT_Stone), 450, "B")
 	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
 end)
 
@@ -381,15 +431,17 @@ test("bloquear con deuda: la deuda queda pendiente y se descuenta al desbloquear
 	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
 end)
 
-test("bloquear todo y compartir todo", function()
+test("bloquear todo y compartir todo (solo lo del que pulsa)", function()
 	start(coop(100, 300))
-	lock_action(1, "2")                    -- madera ya bloqueada
-	lock_action(2, "all")                  -- queda algo compartido -> bloquea el resto
-	for _, rt in ipairs(ALL) do ok(not STR_Ledger_IsShared(pool1(), rt), "todo bloqueado") end
+	lock_action(1, "2")                    -- A ya no comparte la madera
+	lock_action(1, "all")                  -- A comparte algo -> deja de compartir todo
+	for _, rt in ipairs(ALL) do ok(not sharing(1, rt), "A no comparte nada") end
+	for _, rt in ipairs(ALL) do ok(sharing(2, rt), "B no cambia") end
 	eq(Mock_Res(1, RT_Food), 100, "comida de A"); eq(Mock_Res(2, RT_Food), 300, "comida de B")
-	lock_action(1, "all")                  -- nada compartido -> comparte todo
-	for _, rt in ipairs(ALL) do ok(STR_Ledger_IsShared(pool1(), rt), "todo compartido") end
+	lock_action(1, "all")                  -- A no comparte nada -> vuelve a compartir todo
+	for _, rt in ipairs(ALL) do ok(sharing(1, rt), "A comparte todo") end
 	eq(Mock_Res(1, RT_Gold), 400, "A"); eq(Mock_Res(2, RT_Gold), 400, "B")
+	ok(STR_Ledger_CheckInvariant(pool1()), "invariante")
 end)
 
 test("acciones inválidas o de jugadores fuera de la reserva se ignoran", function()
@@ -397,10 +449,10 @@ test("acciones inválidas o de jugadores fuera de la reserva se ignoran", functi
 	lock_action(3, "1")                    -- IA enemiga
 	lock_action(1, "9")                    -- recurso inexistente
 	STR_OnLockToggleNtw(nil, "abc")
-	for _, rt in ipairs(ALL) do ok(STR_Ledger_IsShared(pool1(), rt), "nada cambia") end
+	for _, rt in ipairs(ALL) do ok(sharing(1, rt) and sharing(2, rt), "nada cambia") end
 	Mock_Eliminate(2, false)
 	lock_action(2, "1")                    -- eliminado
-	ok(STR_Ledger_IsShared(pool1(), RT_Food), "el eliminado no bloquea")
+	ok(sharing(1, RT_Food), "el eliminado no bloquea nada")
 end)
 
 ---------------------------------------------------------------------------------------------------
@@ -414,12 +466,21 @@ test("UI: el panel se crea solo para el jugador local de la reserva", function()
 	for _, p in ipairs({ '"1"', '"2"', '"3"', '"4"', '"all"' }) do
 		ok(string.find(xaml, 'CommandParameter=' .. p, 1, true), "falta botón " .. p)
 	end
-	for _, k in ipairs({ "food", "wood", "gold", "stone" }) do
+	for _, k in ipairs({ "food", "wood", "gold", "stone", "all" }) do
 		ok(string.find(xaml, "{Binding [" .. k .. "_icon]}", 1, true), "binding icono " .. k)
-		ok(string.find(xaml, "{Binding [" .. k .. "_state]}", 1, true), "binding estado " .. k)
-		ok(string.find(xaml, "{Binding [" .. k .. "_opacity]}", 1, true), "binding opacidad " .. k)
+		ok(string.find(xaml, "{Binding [" .. k .. "_text]}", 1, true), "binding texto " .. k)
+		ok(string.find(xaml, "{Binding [" .. k .. "_color]}", 1, true), "binding color " .. k)
 	end
 	ok(not string.find(xaml, "]]", 1, true), "sin restos de cadenas Lua")
+	-- El estilo oficial solo pinta texto: el contenido va encima, sin capturar el clic.
+	local _, empty = string.gsub(xaml, 'Content=""', "")
+	local _, overlays = string.gsub(xaml, 'IsHitTestVisible="False"', "")
+	eq(empty, 5, "5 botones vacíos (fondo + clic)"); eq(overlays, 5, "5 capas de icono + texto encima")
+	ok(string.find(xaml, "HUDGray80BodyTextBlock14ptStyle", 1, true), "estilo de texto oficial")
+	local data = MOCK.ui.STR_LockUI.data
+	ok(data.food_icon == STR_UI.icon_shared, "candado abierto al compartir")
+	ok(string.find(STR_UI.icon_shared, "fe_unlocked_icon.png", 1, true), "icono oficial abierto")
+	ok(string.find(STR_UI.icon_locked, "fe_locked_icon.png", 1, true), "icono oficial cerrado")
 
 	Mock_Reset({ { team = 2, human = false }, { team = 1 }, { team = 1 } }, SCAR_ROOT)
 	Mock_LoadMod(); STR_CONFIG.log_level = 0; Mock_StartGame()
@@ -447,23 +508,26 @@ test("UI: un clic viaja por la red y se aplica en el siguiente tick", function()
 	start(coop(100, 100))
 	Mock_Click("3")
 	eq(MOCK.network_sent, 1, "enviado por red")
-	ok(STR_Ledger_IsShared(pool1(), RT_Gold), "todavía no se aplica (es local)")
+	ok(sharing(1, RT_Gold), "todavía no se aplica (es local)")
 	Mock_Tick()
-	ok(not STR_Ledger_IsShared(pool1(), RT_Gold), "aplicado al llegar el evento")
+	ok(not sharing(1, RT_Gold), "aplicado al llegar el evento")
 	local data = MOCK.ui.STR_LockUI.data
-	eq(data.gold_state == "Bloqueado" and 1 or 0, 1, "texto del botón")
-	eq(data.gold_opacity, 0.35, "icono atenuado")
-	eq(data.food_opacity, 1, "comida sigue normal")
-	eq(data.all_text == "Bloquear todo" and 1 or 0, 1, "botón general")
+	ok(data.gold_text == "Bloqueado", "texto del botón")
+	ok(data.gold_icon == STR_UI.icon_locked, "candado cerrado")
+	ok(data.gold_color == STR_UI.color_locked, "color de bloqueado")
+	ok(data.food_text == "Compartido" and data.food_color == STR_UI.color_shared, "comida sigue compartida")
+	ok(data.all_text == "Bloquear todo", "botón general")
 	Mock_Click("all"); Mock_Tick()
-	eq(MOCK.ui.STR_LockUI.data.all_text == "Compartir todo" and 1 or 0, 1, "todo bloqueado")
+	ok(MOCK.ui.STR_LockUI.data.all_text == "Compartir todo", "ya no comparto nada")
+	ok(MOCK.ui.STR_LockUI.data.all_icon == STR_UI.icon_shared, "el botón general muestra lo que hará")
 end)
 
-test("UI: el clic del aliado (otro cliente) también actualiza mi panel", function()
+test("UI: cada uno ve su propio estado; el clic del aliado no cambia mis botones", function()
 	start(coop(100, 100))
 	Mock_SetLocal(2); Mock_Click("1"); Mock_SetLocal(1)   -- B pulsa en su ordenador
 	Mock_Tick()
-	eq(MOCK.ui.STR_LockUI.data.food_state == "Bloqueado" and 1 or 0, 1, "A ve la comida bloqueada")
+	ok(not sharing(2, RT_Food), "B dejó de compartir la comida")
+	ok(MOCK.ui.STR_LockUI.data.food_text == "Compartido", "en el panel de A la comida sigue compartida")
 end)
 
 test("UI: sin la opción de botones no hay panel; en repeticiones tampoco", function()
@@ -617,11 +681,13 @@ test("modo: avisos de activación, deuda y bloqueo con los textos del CSV", func
 	Mock_SetLocal(2); Mock_Click("1"); Mock_SetLocal(1); Mock_Tick()
 	ok(MOCK.cues[3] == LOC(16) .. "|Beto", "bloqueo de comida por Beto: " .. tostring(MOCK.cues[3]))
 	Mock_Click("1"); Mock_Tick()
-	ok(MOCK.cues[4] == LOC(20) .. "|Ana", "desbloqueo: " .. tostring(MOCK.cues[4]))
+	ok(MOCK.cues[4] == LOC(16) .. "|Ana", "Ana también deja de compartir la comida: " .. tostring(MOCK.cues[4]))
+	Mock_Click("1"); Mock_Tick()
+	ok(MOCK.cues[5] == LOC(20) .. "|Ana", "Ana vuelve a compartirla: " .. tostring(MOCK.cues[5]))
 	Mock_Click("all"); Mock_Tick()
-	ok(MOCK.cues[5] == LOC(24) .. "|Ana", "bloquear todo: " .. tostring(MOCK.cues[5]))
+	ok(MOCK.cues[6] == LOC(24) .. "|Ana", "bloquear todo: " .. tostring(MOCK.cues[6]))
 	Mock_Click("all"); Mock_Tick()
-	ok(MOCK.cues[6] == LOC(25) .. "|Ana", "compartir todo: " .. tostring(MOCK.cues[6]))
+	ok(MOCK.cues[7] == LOC(25) .. "|Ana", "compartir todo: " .. tostring(MOCK.cues[7]))
 end)
 
 test("modo: opción 'Jugadores por reserva' del lobby", function()
@@ -702,16 +768,18 @@ end)
 -- Prueba aleatoria de conservación (con bloqueos)
 ---------------------------------------------------------------------------------------------------
 
-test("fuzz: 5.000 ticks aleatorios con bloqueos conservan los recursos", function()
+test("fuzz: 5.000 ticks aleatorios, 3 jugadores con bloqueos, conservan los recursos", function()
 	math.randomseed(12345)
-	start(coop(200, 200))
+	local N = 3
+	start({ { team = 1, food = 200, wood = 200, gold = 200, stone = 200 },
+		{ team = 1, food = 200, wood = 200, gold = 200, stone = 200 },
+		{ team = 1, food = 200, wood = 200, gold = 200, stone = 200 } })
 	-- "verdad" externa: lo que realmente entró y salió del equipo.
 	local truth = {}
-	for _, rt in ipairs(ALL) do truth[rt] = Mock_Res(1, rt) + 0 end
-	truth[RT_Food] = 400; truth[RT_Wood] = 400; truth[RT_Gold] = 400; truth[RT_Stone] = 400
+	for _, rt in ipairs(ALL) do truth[rt] = 600 end
 	local pool = pool1()
 	for _ = 1, 5000 do
-		for n = 1, 2 do
+		for n = 1, N do
 			local rt = ALL[math.random(1, 4)]
 			local r = math.random()
 			if r < 0.5 then
@@ -728,14 +796,16 @@ test("fuzz: 5.000 ticks aleatorios con bloqueos conservan los recursos", functio
 		end
 		Mock_Tick()
 		for _, rt in ipairs(ALL) do
-			if STR_Ledger_IsShared(pool, rt) then
-				eq(pool.balance[rt], truth[rt], "saldo vs verdad")
-				eq(Mock_Res(1, rt), Mock_Res(2, rt), "ambos ven lo mismo")
-				eq(Mock_Res(1, rt), math.max(truth[rt], 0), "visible")
-			else
-				-- Bloqueado: lo que tienen los dos + deuda pendiente = verdad.
-				eq(Mock_Res(1, rt) + Mock_Res(2, rt) + pool.balance[rt], truth[rt], "bloqueado vs verdad")
+			-- Reserva (incluida la deuda) + saldos propios de quien no comparte = verdad.
+			local private = 0
+			for n = 1, N do
+				if sharing(n, rt) then
+					eq(Mock_Res(n, rt), math.max(pool.balance[rt], 0), "los que comparten ven el saldo común")
+				else
+					private = private + Mock_Res(n, rt)
+				end
 			end
+			eq(pool.balance[rt] + private, truth[rt], "reserva + saldos propios vs verdad")
 		end
 	end
 	local ok_inv, bad, diff = STR_Ledger_CheckInvariant(pool)

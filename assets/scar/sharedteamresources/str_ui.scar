@@ -1,16 +1,23 @@
 ---------------------------------------------------------------------------------------------------
 -- SharedResources - Botones de bloqueo
 --
--- Panel con un botón por recurso y un botón para todos. Solo lo ve el jugador
--- local que pertenece a una reserva.
+-- Panel con un botón por recurso y un botón para todos. Cada jugador de una
+-- reserva ve SU panel, con SU estado: el bloqueo es por jugador.
 --
---   Clic en un recurso -> bloquea / desbloquea ese recurso para el equipo.
---   Clic en "Todos"    -> si queda algo compartido, bloquea todo; si no, lo comparte todo.
+--   Clic en un recurso -> dejas de compartir ese recurso (te quedas con lo que
+--                         aportaste) o vuelves a compartirlo. Los demás siguen.
+--   Clic en "Todos"    -> si compartes algo, dejas de compartirlo todo; si no,
+--                         vuelves a compartirlo todo.
 --
 -- Diseño por defecto ("column"): una columna pegada a la derecha del recuadro de
 -- recursos (abajo a la izquierda), un botón a la altura de cada recurso
 -- (comida, madera, oro, piedra, de arriba abajo) y "Todos" encima, a la altura
 -- de la población. Alternativa "row": todo en una fila.
+--
+-- Por qué el contenido va ENCIMA del botón y no dentro: el estilo oficial
+-- PrimaryRaisedTextButton solo dibuja texto (en mayúsculas y recortado) e
+-- ignora imágenes. Así que el botón pone el fondo y el clic, y encima va un
+-- panel propio (sin capturar el ratón) con el icono oficial de candado y el texto.
 --
 -- Un clic es LOCAL: se envía por red con Network_CallEvent y el cambio real se
 -- aplica en STR_OnLockToggleNtw (str_main.scar), en todos los clientes a la vez.
@@ -23,20 +30,19 @@ STR_UI = {
 	id = "STR_LockUI",
 	created = false,
 	pool = nil,
+	member = nil,      -- id del jugador local en la reserva
 	data = nil,
-	icons = {
-		"pack://application:,,,/WPFGUI;component/icons/resources/resource_food_icon.png",
-		"pack://application:,,,/WPFGUI;component/icons/resources/resource_wood_icon.png",
-		"pack://application:,,,/WPFGUI;component/icons/resources/resource_gold_icon.png",
-		"pack://application:,,,/WPFGUI;component/icons/resources/resource_stone_icon.png",
-	},
 	keys = { "food", "wood", "gold", "stone" },
+	-- Iconos oficiales del juego (candado abierto / cerrado).
+	icon_shared = "pack://application:,,,/WPFGUI;component/images/fe/fe_unlocked_icon.png",
+	icon_locked = "pack://application:,,,/WPFGUI;component/images/fe/fe_locked_icon.png",
 	text_shared = "Compartido",
 	text_locked = "Bloqueado",
 	text_lock_all = "Bloquear todo",
 	text_unlock_all = "Compartir todo",
-	opacity_shared = 1.0,
-	opacity_locked = 0.35,
+	color_shared = "#FFB8E07A",
+	color_locked = "#FFF0A04B",
+	color_all = "#FFFFFFFF",
 }
 
 local function STR_UI_Cfg()
@@ -51,44 +57,31 @@ local function STR_UI_Cfg()
 	}
 end
 
--- Botón de un recurso: icono pequeño + estado ("Compartido" / "Bloqueado").
--- En columna el icono va a la izquierda del texto; en fila, encima.
-local function STR_UI_ResourceButton(index, key, cfg)
+-- Un botón: el Button oficial de fondo (vacío) y encima icono + texto.
+--   parameter -> "1".."4" o "all"
+--   key       -> prefijo de los datos: <key>_icon, <key>_text, <key>_color
+local function STR_UI_Button(parameter, key, cfg, last)
+	local w = cfg.button_width
+	local h = cfg.row_height - 2
+	local margin
+	if cfg.layout == "column" then
+		margin = (parameter == "all") and "0,0,0,6" or "0,0,0,2"
+	else
+		margin = last and "0,0,0,0" or "0,0,4,0"
+	end
 	local b = "[" .. key
-	local size
-	local orientation
-	local spacing
-	if cfg.layout == "column" then
-		size = 'Width="' .. cfg.button_width .. '" Height="' .. (cfg.row_height - 2) .. '" Margin="0,0,0,2"'
-		orientation = "Horizontal"
-		spacing = 'Margin="0,0,6,0"'
-	else
-		size = 'Margin="2,0,2,0"'
-		orientation = "Vertical"
-		spacing = 'HorizontalAlignment="Center"'
-	end
-	return '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" ' .. size
-		.. ' MinHeight="0" MinWidth="0" Padding="4,0,4,0" HorizontalContentAlignment="Left"'
-		.. ' Command="{Binding [click]}" CommandParameter="' .. index .. '">'
-		.. '\n\t\t\t<StackPanel Orientation="' .. orientation .. '" VerticalAlignment="Center">'
-		.. '\n\t\t\t\t<Image Source="{Binding ' .. b .. '_icon]}" Opacity="{Binding ' .. b .. '_opacity]}"'
-		.. ' Width="22" Height="22" ' .. spacing .. ' />'
-		.. '\n\t\t\t\t<TextBlock Text="{Binding ' .. b .. '_state]}" FontSize="12"'
-		.. ' VerticalAlignment="Center" Foreground="White" />'
-		.. '\n\t\t\t</StackPanel>'
-		.. '\n\t\t</Button>'
-end
-
-local function STR_UI_AllButton(cfg)
-	local size
-	if cfg.layout == "column" then
-		size = 'Width="' .. cfg.button_width .. '" Height="' .. (cfg.row_height - 2) .. '" Margin="0,0,0,6"'
-	else
-		size = 'Margin="6,0,0,0" VerticalAlignment="Stretch"'
-	end
-	return '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" ' .. size
-		.. ' MinHeight="0" MinWidth="0" Padding="4,0,4,0" FontSize="12"'
-		.. ' Command="{Binding [click]}" CommandParameter="all" Content="{Binding [all_text]}" />'
+	return '\n\t<Grid Width="' .. w .. '" Height="' .. h .. '" Margin="' .. margin .. '">'
+		.. '\n\t\t<Button Style="{StaticResource PrimaryRaisedTextButton}" MinHeight="0" MinWidth="0"'
+		.. ' Padding="0" Content="" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"'
+		.. ' Command="{Binding [click]}" CommandParameter="' .. parameter .. '" />'
+		.. '\n\t\t<StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left"'
+		.. ' Margin="6,0,4,0" IsHitTestVisible="False">'
+		.. '\n\t\t\t<Image Source="{Binding ' .. b .. '_icon]}" Width="20" Height="20" Margin="0,0,6,0" />'
+		.. '\n\t\t\t<TextBlock Text="{Binding ' .. b .. '_text]}" Foreground="{Binding ' .. b .. '_color]}"'
+		.. ' Style="{StaticResource HUDGray80BodyTextBlock14ptStyle}" Effect="{StaticResource DropShadowTextStyle}"'
+		.. ' VerticalAlignment="Center" />'
+		.. '\n\t\t</StackPanel>'
+		.. '\n\t</Grid>'
 end
 
 function STR_UI_BuildXaml()
@@ -97,13 +90,13 @@ function STR_UI_BuildXaml()
 	if cfg.layout == "column" then
 		-- "Todos" arriba (altura de la población) y los recursos debajo, en el
 		-- mismo orden que el recuadro del juego.
-		parts[#parts + 1] = STR_UI_AllButton(cfg)
+		parts[#parts + 1] = STR_UI_Button("all", "all", cfg, false)
 	end
 	for i, key in ipairs(STR_UI.keys) do
-		parts[#parts + 1] = STR_UI_ResourceButton(i, key, cfg)
+		parts[#parts + 1] = STR_UI_Button(tostring(i), key, cfg, false)
 	end
 	if cfg.layout ~= "column" then
-		parts[#parts + 1] = STR_UI_AllButton(cfg)
+		parts[#parts + 1] = STR_UI_Button("all", "all", cfg, true)
 	end
 	local orientation = (cfg.layout == "column") and "Vertical" or "Horizontal"
 	return '<StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"'
@@ -116,25 +109,25 @@ function STR_UI_BuildXaml()
 		.. '\n</StackPanel>'
 end
 
--- Rellena la tabla de datos con el estado actual de la reserva.
-function STR_UI_BuildData(pool)
+-- Rellena la tabla de datos con el estado del jugador local.
+function STR_UI_BuildData(pool, member)
 	local data = STR_UI.data or { click = UI_CreateCommand("STR_UI_OnClick") }
 	for i, key in ipairs(STR_UI.keys) do
 		local rt = STR_RESOURCE_TYPES[i]
-		local shared = pool ~= nil and STR_Ledger_IsShared(pool, rt)
-		data[key .. "_icon"] = STR_UI.icons[i]
-		data[key .. "_state"] = shared and STR_UI.text_shared or STR_UI.text_locked
-		data[key .. "_opacity"] = shared and STR_UI.opacity_shared or STR_UI.opacity_locked
+		local sharing = pool ~= nil and STR_Ledger_IsSharing(pool, member, rt)
+		data[key .. "_icon"] = sharing and STR_UI.icon_shared or STR_UI.icon_locked
+		data[key .. "_text"] = sharing and STR_UI.text_shared or STR_UI.text_locked
+		data[key .. "_color"] = sharing and STR_UI.color_shared or STR_UI.color_locked
 	end
-	if pool ~= nil and STR_Ledger_AnyShared(pool) then
-		data.all_text = STR_UI.text_lock_all
-	else
-		data.all_text = STR_UI.text_unlock_all
-	end
+	local any = pool ~= nil and STR_Ledger_AnySharing(pool, member)
+	-- El botón general muestra lo que HARÁ al pulsarlo.
+	data.all_icon = any and STR_UI.icon_locked or STR_UI.icon_shared
+	data.all_text = any and STR_UI.text_lock_all or STR_UI.text_unlock_all
+	data.all_color = STR_UI.color_all
 	return data
 end
 
--- Crea el panel para la reserva del jugador local. Devuelve true si se creó.
+-- Crea el panel para el jugador local (si está en una reserva). Devuelve true si se creó.
 function STR_UI_Create(pool)
 	if pool == nil then
 		return false
@@ -145,9 +138,14 @@ function STR_UI_Create(pool)
 	if UI_IsReplay ~= nil and UI_IsReplay() then
 		return false
 	end
+	local _, member = STR_GetLocalMember()
+	if member == nil then
+		return false
+	end
 	local ok, err = pcall(function()
 		STR_UI.pool = pool
-		STR_UI.data = STR_UI_BuildData(pool)
+		STR_UI.member = member
+		STR_UI.data = STR_UI_BuildData(pool, member)
 		UI_AddChild("ScarDefault", "XamlPresenter", STR_UI.id, {
 			IsHitTestVisible = true,
 			Xaml = STR_UI_BuildXaml(),
@@ -162,26 +160,19 @@ function STR_UI_Create(pool)
 	return true
 end
 
--- Actualiza los textos y la opacidad de los botones.
+-- Actualiza iconos, textos y colores.
 function STR_UI_Refresh()
 	if not STR_UI.created then
 		return
 	end
 	-- Si el jugador local ya no está en la reserva (eliminado), se quita el panel.
 	local pool = STR_UI.pool
-	local still_member = false
-	for _, id in ipairs(pool.members) do
-		local player = STR_STATE.player_of[id]
-		if player ~= nil and player.isLocal then
-			still_member = true
-		end
-	end
-	if not still_member then
+	if not STR_Ledger_HasMember(pool, STR_UI.member) then
 		STR_UI_Remove()
 		return
 	end
 	local ok, err = pcall(function()
-		STR_UI.data = STR_UI_BuildData(pool)
+		STR_UI.data = STR_UI_BuildData(pool, STR_UI.member)
 		UI_SetDataContext(STR_UI.id, STR_UI.data)
 	end)
 	if not ok then

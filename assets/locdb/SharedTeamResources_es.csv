@@ -14,16 +14,16 @@
 13,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de oro
 14,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de piedra
 15,,,Event cue at start.,,,Recursos compartidos activados con tu aliado
-16,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% ha bloqueado la comida: cada uno vuelve a tener lo suyo
-17,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% ha bloqueado la madera: cada uno vuelve a tener lo suyo
-18,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% ha bloqueado el oro: cada uno vuelve a tener lo suyo
-19,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% ha bloqueado la piedra: cada uno vuelve a tener lo suyo
+16,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la comida y se queda con lo que aportó
+17,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la madera y se queda con lo que aportó
+18,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir el oro y se queda con lo que aportó
+19,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la piedra y se queda con lo que aportó
 20,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la comida
 21,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la madera
 22,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir el oro
 23,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la piedra
-24,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% ha bloqueado todos los recursos
-25,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir todos los recursos
+24,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir todos sus recursos
+25,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir todos sus recursos
 26,,,Lobby section.,,,Condiciones de victoria
 27,,,Option name,,,Edificios distintivos
 28,,,Option tooltip,,,Gana el equipo que destruya todos los edificios distintivos de sus enemigos

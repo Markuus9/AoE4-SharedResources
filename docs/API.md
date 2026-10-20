@@ -31,8 +31,9 @@ Marca la última columna cuando lo compruebes en el juego.
 | `UI_AddChild("ScarDefault", "XamlPresenter", nombre, {IsHitTestVisible, Xaml, DataContext})` | Crear el panel | Doc oficial + script oficial | [ ] |
 | `UI_CreateDataContext`, `UI_SetDataContext`, `UI_Remove` | Actualizar o quitar el panel | Doc oficial + script oficial | [ ] |
 | `UI_CreateCommand("Func")` + `CommandParameter` → `Func(parametro)` | Clic | Script oficial (tributos: `Diplomacy_IncreaseTribute(parameter)`) | [ ] |
-| Estilo `PrimaryRaisedTextButton` | Aspecto de los botones | Script oficial (modo Combat) | [ ] |
-| Iconos `pack://application:,,,/WPFGUI;component/icons/resources/resource_{food,wood,gold,stone}_icon.png` | Iconos | Script oficial (`diplomacy.scar`) | [ ] |
+| Estilo `PrimaryRaisedTextButton` | Fondo y clic de los botones (su plantilla solo dibuja texto, por eso el contenido va encima) | Script oficial (modo Combat) + plantilla en `UI.sga` | [x] |
+| Iconos `pack://application:,,,/WPFGUI;component/images/fe/fe_unlocked_icon.png` y `fe_locked_icon.png` | Candado abierto/cerrado | XAML oficial en `UI.sga` | [ ] |
+| Estilo `HUDGray80BodyTextBlock14ptStyle`, efecto `DropShadowTextStyle`, `Foreground="{Binding [x]}"` con `"#AARRGGBB"` | Texto de los botones | Script oficial (modo Combat, sin diccionarios extra) | [ ] |
 | `UI_IsReplay()` | No mostrar botones en repeticiones | Doc oficial | [ ] |
 | `Player_GetDisplayName(id)` como parámetro de `Loc_FormatText` | Nombre en los avisos | Doc oficial + script oficial | [ ] |
 
@@ -49,6 +50,6 @@ Marca la última columna cuando lo compruebes en el juego.
 ## Preguntas abiertas
 
 1. **Posición del panel.** ¿Dónde queda respecto a la barra de recursos? Ajustar `STR_CONFIG.ui.margin`.
-2. **Aspecto de los botones.** ¿El estilo `PrimaryRaisedTextButton` se ve bien con icono y texto? Si no, probar con otro estilo de los que usa el juego, como `HUDPrimaryRaisedTextButton`.
+2. **Aspecto de los botones.** ¿Se ven el candado y el texto encima del botón? Si el icono no aparece, la alternativa es `icons/common/locked.png`.
 3. **Estadísticas.** ¿`Player_SetResource` cuenta en las estadísticas finales de recursos recolectados?
 4. **Aldeanos extra.** ¿Superan el límite de población? El juego los crea igualmente, pero no podrás producir más hasta tener casas.

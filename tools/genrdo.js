@@ -107,10 +107,10 @@ const ON_S = row('Los aliados comparten todos sus recursos', 'Option item summar
 const OFF_S = row('Cada jugador tiene sus propios recursos', 'Option item summary: off.');
 ['comida', 'madera', 'oro', 'piedra'].forEach(function (r) { row('Gasto simultáneo: el equipo debe %1AMOUNT% de ' + r, 'Event cue. %1AMOUNT% = debt.'); });
 row('Recursos compartidos activados con tu aliado', 'Event cue at start.');
-['la comida', 'la madera', 'el oro', 'la piedra'].forEach(function (r) { row('%1PLAYER% ha bloqueado ' + r + ': cada uno vuelve a tener lo suyo', 'Event cue. %1PLAYER% = player.'); });
+['la comida', 'la madera', 'el oro', 'la piedra'].forEach(function (r) { row('%1PLAYER% deja de compartir ' + r + ' y se queda con lo que aportó', 'Event cue. %1PLAYER% = player.'); });
 ['la comida', 'la madera', 'el oro', 'la piedra'].forEach(function (r) { row('%1PLAYER% vuelve a compartir ' + r, 'Event cue. %1PLAYER% = player.'); });
-row('%1PLAYER% ha bloqueado todos los recursos', 'Event cue. %1PLAYER% = player.');
-row('%1PLAYER% vuelve a compartir todos los recursos', 'Event cue. %1PLAYER% = player.');
+row('%1PLAYER% deja de compartir todos sus recursos', 'Event cue. %1PLAYER% = player.');
+row('%1PLAYER% vuelve a compartir todos sus recursos', 'Event cue. %1PLAYER% = player.');
 if (rows.length !== 25) throw new Error('filas fijas: ' + rows.length);
 
 // --- Secciones del lobby ---
