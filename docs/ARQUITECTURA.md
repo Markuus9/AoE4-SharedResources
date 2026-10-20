@@ -134,7 +134,10 @@ Los aliados producen pagando con *sus* recursos; con la reserva, son los comunes
 
 ## Idiomas
 
-`assets/locdb/SharedTeamResources_en.csv` y `_es.csv` tienen la misma numeración de filas (97). El `.locdb` registra los dos idiomas, con el inglés primero, como en AGS. Todos los textos del lobby, de los avisos y de los botones (al pasar el ratón) salen de ahí. [tools/genrdo.js](../tools/genrdo.js) genera los dos CSV: el español está en el propio script y el inglés en [tools/locale_en.js](../tools/locale_en.js), y el script comprueba que coinciden fila a fila.
+`assets/locdb/SharedTeamResources_en.csv` y `_es.csv` tienen la misma numeración de filas (97). El `.locdb` registra los dos idiomas, con el inglés primero, como en AGS. Los dos CSV tienen formatos distintos:
+
+- El inglés es el **idioma origen**: `ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text`.
+- El español es una **traducción**: `ID,SourceText,TranslatedText`. Si se le pone el formato de origen, el compilador falla con *Required header [SourceText] not found*. Todos los textos del lobby, de los avisos y de los botones (al pasar el ratón) salen de ahí. [tools/genrdo.js](../tools/genrdo.js) genera los dos CSV: el español está en el propio script y el inglés en [tools/locale_en.js](../tools/locale_en.js), y el script comprueba que coinciden fila a fila.
 
 ## Formación de reservas
 

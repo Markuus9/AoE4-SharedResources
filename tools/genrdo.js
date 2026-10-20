@@ -204,17 +204,21 @@ const end = src.indexOf('\t\t<DataProperty Name="m_precacheList"');
 if (start < 0 || end < 0) throw new Error('no encuentro el bloque de opciones');
 const rdo = src.slice(0, start) + optionsXml + src.slice(end);
 fs.writeFileSync(out + '/SharedTeamResources.rdo', rdo);
-const csv = '﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text\n' +
-  rows.map(function (r, k) { return (k + 1) + ',,,' + r[0] + ',,,' + r[1]; }).join('\n') + '\n';
-fs.writeFileSync(out + '/SharedTeamResources_es.csv', csv);
-
-// --- Inglés: misma numeración de filas ---
+// --- Idiomas ---
+// El primer idioma del .locdb (inglés) es el ORIGEN y usa el formato completo:
+//   ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text
+// Los demás (español) son TRADUCCIONES y el compilador exige este otro formato:
+//   ID,SourceText,TranslatedText
+// (Con el formato de origen en una traducción falla: "Required header [SourceText] not found".)
 const EN = require('./locale_en.js');
 if (EN.length !== rows.length) throw new Error('inglés: ' + EN.length + ' filas, español: ' + rows.length);
 EN.forEach(function (t, k) { if (/[,"]/.test(t)) throw new Error('coma o comillas en inglés fila ' + (k + 1) + ': ' + t); });
 const csvEn = '﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text\n' +
   rows.map(function (r, k) { return (k + 1) + ',,,' + r[0] + ',,,' + EN[k]; }).join('\n') + '\n';
 fs.writeFileSync(out + '/SharedTeamResources_en.csv', csvEn);
+const csvEs = '﻿ID,SourceText,TranslatedText\n' +
+  rows.map(function (r, k) { return (k + 1) + ',' + EN[k] + ',' + r[1]; }).join('\n') + '\n';
+fs.writeFileSync(out + '/SharedTeamResources_es.csv', csvEs);
 
 // Validación
 const st = []; let ok = true; const re = /<(\/?)(DataObject|DataProperty|DataValue|DataWarehouse)\b[^>]*?(\/?)>/g; let m;

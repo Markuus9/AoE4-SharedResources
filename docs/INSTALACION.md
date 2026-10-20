@@ -84,5 +84,6 @@ Documents\My Games\Age of Empires IV\LogFiles\
 | No aparecen los botones | Mira el aviso de depuración: si dice "panel de botones creado", está fuera de pantalla o tapado (ajusta `margin`); si dice "no se pudo crear", el XAML falló. |
 | Los botones salen pero no hacen nada | Aviso "los botones no están disponibles (sin eventos de red)". |
 | El editor da error en el `.rdo` | Regenera con `node tools/genrdo.js <salida> assets/scar/winconditions/SharedTeamResources.rdo` y copia los dos archivos generados. |
-| Los textos salen como `$01f4...:13` | El juego está en un idioma sin textos: solo hay `_es.csv`. |
+| Los textos salen como `$01f4...:13` | El juego está en un idioma sin textos (solo hay inglés y español). |
+| Al compilar: *Required header [SourceText] not found* | Un CSV de traducción (no el inglés) tiene el formato de origen. Las traducciones usan `ID,SourceText,TranslatedText`; regenera con `node tools/genrdo.js`. |
 | Desync en multijugador | Algo de la simulación depende del jugador local. Ver [ARQUITECTURA.md](ARQUITECTURA.md#determinismo). |

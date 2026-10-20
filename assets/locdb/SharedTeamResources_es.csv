@@ -1,98 +1,98 @@
-﻿ID,Pipeline,PipelineStage,Notes,TranslationNotes,Tags,Text
-1,,,Mod name.,,,Shared Resources
-2,,,Mod description.,,,Modo estándar en el que los aliados comparten comida - madera - oro y piedra. Puedes bloquear cada recurso en cualquier momento.
-3,,,Game mode name.,,,Shared Resources (Estándar)
-4,,,Lobby section.,,,Recursos compartidos
-5,,,Lobby option name.,,,Recursos compartidos
-6,,,Lobby option tooltip.,,,Si está activado los aliados de cada equipo comparten una única reserva de recursos
-7,,,Option item: on.,,,Activados
-8,,,Option item: off.,,,Desactivados
-9,,,Option item summary: on.,,,Los aliados comparten todos sus recursos
-10,,,Option item summary: off.,,,Cada jugador tiene sus propios recursos
-11,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de comida
-12,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de madera
-13,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de oro
-14,,,Event cue. %1AMOUNT% = debt.,,,Gasto simultáneo: el equipo debe %1AMOUNT% de piedra
-15,,,Event cue at start.,,,Recursos compartidos activados con tu aliado
-16,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la comida y se queda con lo que aportó
-17,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la madera y se queda con lo que aportó
-18,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir el oro y se queda con lo que aportó
-19,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir la piedra y se queda con lo que aportó
-20,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la comida
-21,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la madera
-22,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir el oro
-23,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir la piedra
-24,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% deja de compartir todos sus recursos
-25,,,Event cue. %1PLAYER% = player.,,,%1PLAYER% vuelve a compartir todos sus recursos
-26,,,Lobby section.,,,Condiciones de victoria
-27,,,Option name,,,Edificios distintivos
-28,,,Option tooltip,,,Gana el equipo que destruya todos los edificios distintivos de sus enemigos
-29,,,Option name,,,Maravilla
-30,,,Option tooltip,,,Gana el equipo que mantenga en pie una maravilla durante el tiempo indicado
-31,,,Option name,,,Lugares sagrados
-32,,,Option tooltip,,,Gana el equipo que controle todos los lugares sagrados durante el tiempo indicado
-33,,,Option name,,,Regicidio
-34,,,Option tooltip,,,Cada jugador tiene un rey: si muere el rey el jugador pierde
-35,,,Option name,,,Botones de bloqueo
-36,,,Option tooltip,,,Muestra en partida un botón por recurso para dejar de compartirlo y otro para todos
-37,,,Lobby section.,,,Condiciones de inicio
-38,,,Option name,,,Edad inicial
-39,,,Option tooltip,,,Edad con la que empiezan todos los jugadores
-40,,,Option item,,,Alta Edad Media
-41,,,Option item,,,Edad Feudal
-42,,,Option item,,,Edad de los Castillos
-43,,,Option item,,,Edad Imperial
-44,,,Option name,,,Recursos iniciales
-45,,,Option tooltip,,,Recursos con los que empieza cada jugador (comida / madera / oro / piedra)
-46,,,Option item,,,Estándar
-47,,,Option item,,,Medios: 1000 / 1000 / 600 / 400
-48,,,Option item,,,Altos: 3000 / 3000 / 2000 / 1500
-49,,,Option item,,,Muy altos: 10000 / 10000 / 7500 / 5000
-50,,,Option name,,,Aldeanos extra
-51,,,Option tooltip,,,Aldeanos adicionales junto al centro urbano al empezar
-52,,,Option item,,,Ninguno
-53,,,Option item,,,+6 aldeanos
-54,,,Option item,,,+12 aldeanos
-55,,,Option item,,,+20 aldeanos
-56,,,Option name,,,Velocidad de economía
-57,,,Option tooltip,,,Multiplica la velocidad de recolección - construcción - producción e investigación
-58,,,Option item,,,Normal
-59,,,Option item,,,x2
-60,,,Option item,,,x3
-61,,,Option name,,,Mapa
-62,,,Option tooltip,,,Cómo empieza la niebla de guerra
-63,,,Option item,,,Normal
-64,,,Option item,,,Explorado
-65,,,Option item,,,Revelado
-66,,,Option name,,,Mostrar puntuación
-67,,,Option tooltip,,,Muestra la puntuación real de todos los jugadores
-68,,,Lobby section.,,,Diplomacia
-69,,,Option name,,,Equipos fijos
-70,,,Option tooltip,,,Las alianzas no se pueden cambiar durante la partida
-71,,,Option name,,,Tributos
-72,,,Option tooltip,,,Permite enviar recursos a otros jugadores
-73,,,Option name,,,Jugadores por reserva
-74,,,Option tooltip,,,Máximo de jugadores de un mismo equipo que comparten la reserva
-75,,,Option item,,,Hasta 2
-76,,,Option item,,,Hasta 3
-77,,,Option item,,,Hasta 4
-78,,,Option name,,,Incluir IA aliada
-79,,,Option tooltip,,,Las IA de tu equipo también comparten la reserva (los equipos solo de IA nunca comparten)
-80,,,Option name,,,Avisos de depuración
-81,,,Option tooltip,,,Muestra en pantalla por qué se crea o no la reserva y el estado de los botones
-82,,,Debug cue. %1COUNT% = players.,,,Depuración: reserva creada con %1COUNT% jugadores de tu equipo
-83,,,Debug cue. %1COUNT% %2MAX%.,,,Depuración: tu equipo no comparte porque tiene %1COUNT% jugadores y el máximo es %2MAX%
-84,,,Debug cue. %1COUNT% = players.,,,Depuración: tu equipo no comparte porque solo hay %1COUNT% jugador elegible (revisa Incluir IA aliada)
-85,,,Debug cue.,,,Depuración: recursos compartidos desactivados en el lobby
-86,,,Debug cue.,,,Depuración: no estás en ningún equipo que comparta recursos
-87,,,Debug cue.,,,Depuración: panel de botones creado
-88,,,Debug cue.,,,Depuración: no se pudo crear el panel de botones
-89,,,Debug cue.,,,Depuración: los botones no están disponibles (sin eventos de red)
-90,,,Option name,,,Población máxima compartida
-91,,,Option tooltip,,,El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use
-92,,,Option name,,,Producción compartida
-93,,,Option tooltip,,,Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos
-94,,,Button tooltip.,,,Compartido: pulsa para dejar de compartirlo
-95,,,Button tooltip.,,,Bloqueado: pulsa para volver a compartirlo
-96,,,Button tooltip.,,,Bloquear todo
-97,,,Button tooltip.,,,Compartir todo
+﻿ID,SourceText,TranslatedText
+1,Shared Resources,Shared Resources
+2,Standard mode where allies share food - wood - gold and stone. You can lock each resource at any time.,Modo estándar en el que los aliados comparten comida - madera - oro y piedra. Puedes bloquear cada recurso en cualquier momento.
+3,Shared Resources (Standard),Shared Resources (Estándar)
+4,Shared resources,Recursos compartidos
+5,Shared resources,Recursos compartidos
+6,If enabled the allies of each team share a single resource pool,Si está activado los aliados de cada equipo comparten una única reserva de recursos
+7,Enabled,Activados
+8,Disabled,Desactivados
+9,Allies share all their resources,Los aliados comparten todos sus recursos
+10,Each player keeps their own resources,Cada jugador tiene sus propios recursos
+11,Simultaneous spending: the team owes %1AMOUNT% food,Gasto simultáneo: el equipo debe %1AMOUNT% de comida
+12,Simultaneous spending: the team owes %1AMOUNT% wood,Gasto simultáneo: el equipo debe %1AMOUNT% de madera
+13,Simultaneous spending: the team owes %1AMOUNT% gold,Gasto simultáneo: el equipo debe %1AMOUNT% de oro
+14,Simultaneous spending: the team owes %1AMOUNT% stone,Gasto simultáneo: el equipo debe %1AMOUNT% de piedra
+15,Shared resources enabled with your ally,Recursos compartidos activados con tu aliado
+16,%1PLAYER% stops sharing food and keeps their contribution,%1PLAYER% deja de compartir la comida y se queda con lo que aportó
+17,%1PLAYER% stops sharing wood and keeps their contribution,%1PLAYER% deja de compartir la madera y se queda con lo que aportó
+18,%1PLAYER% stops sharing gold and keeps their contribution,%1PLAYER% deja de compartir el oro y se queda con lo que aportó
+19,%1PLAYER% stops sharing stone and keeps their contribution,%1PLAYER% deja de compartir la piedra y se queda con lo que aportó
+20,%1PLAYER% shares food again,%1PLAYER% vuelve a compartir la comida
+21,%1PLAYER% shares wood again,%1PLAYER% vuelve a compartir la madera
+22,%1PLAYER% shares gold again,%1PLAYER% vuelve a compartir el oro
+23,%1PLAYER% shares stone again,%1PLAYER% vuelve a compartir la piedra
+24,%1PLAYER% stops sharing all their resources,%1PLAYER% deja de compartir todos sus recursos
+25,%1PLAYER% shares all their resources again,%1PLAYER% vuelve a compartir todos sus recursos
+26,Win conditions,Condiciones de victoria
+27,Landmarks,Edificios distintivos
+28,The team that destroys all enemy landmarks wins,Gana el equipo que destruya todos los edificios distintivos de sus enemigos
+29,Wonder,Maravilla
+30,The team that keeps a wonder standing for the required time wins,Gana el equipo que mantenga en pie una maravilla durante el tiempo indicado
+31,Sacred sites,Lugares sagrados
+32,The team that holds all sacred sites for the required time wins,Gana el equipo que controle todos los lugares sagrados durante el tiempo indicado
+33,Regicide,Regicidio
+34,Each player has a king: if the king dies the player loses,Cada jugador tiene un rey: si muere el rey el jugador pierde
+35,Lock buttons,Botones de bloqueo
+36,Shows a button per resource in game to stop sharing it and another one for all,Muestra en partida un botón por recurso para dejar de compartirlo y otro para todos
+37,Starting conditions,Condiciones de inicio
+38,Starting age,Edad inicial
+39,Age every player starts in,Edad con la que empiezan todos los jugadores
+40,Dark Age,Alta Edad Media
+41,Feudal Age,Edad Feudal
+42,Castle Age,Edad de los Castillos
+43,Imperial Age,Edad Imperial
+44,Starting resources,Recursos iniciales
+45,Resources each player starts with (food / wood / gold / stone),Recursos con los que empieza cada jugador (comida / madera / oro / piedra)
+46,Standard,Estándar
+47,Medium: 1000 / 1000 / 600 / 400,Medios: 1000 / 1000 / 600 / 400
+48,High: 3000 / 3000 / 2000 / 1500,Altos: 3000 / 3000 / 2000 / 1500
+49,Very high: 10000 / 10000 / 7500 / 5000,Muy altos: 10000 / 10000 / 7500 / 5000
+50,Extra villagers,Aldeanos extra
+51,Additional villagers next to the town center at the start,Aldeanos adicionales junto al centro urbano al empezar
+52,None,Ninguno
+53,+6 villagers,+6 aldeanos
+54,+12 villagers,+12 aldeanos
+55,+20 villagers,+20 aldeanos
+56,Economy speed,Velocidad de economía
+57,Multiplies gathering - construction - production and research speed,Multiplica la velocidad de recolección - construcción - producción e investigación
+58,Normal,Normal
+59,x2,x2
+60,x3,x3
+61,Map,Mapa
+62,How the fog of war starts,Cómo empieza la niebla de guerra
+63,Normal,Normal
+64,Explored,Explorado
+65,Revealed,Revelado
+66,Show score,Mostrar puntuación
+67,Shows the real score of every player,Muestra la puntuación real de todos los jugadores
+68,Diplomacy,Diplomacia
+69,Locked teams,Equipos fijos
+70,Alliances cannot be changed during the match,Las alianzas no se pueden cambiar durante la partida
+71,Tributes,Tributos
+72,Allows sending resources to other players,Permite enviar recursos a otros jugadores
+73,Players per pool,Jugadores por reserva
+74,Maximum number of players of the same team who share the pool,Máximo de jugadores de un mismo equipo que comparten la reserva
+75,Up to 2,Hasta 2
+76,Up to 3,Hasta 3
+77,Up to 4,Hasta 4
+78,Include allied AI,Incluir IA aliada
+79,AI players on your team also share the pool (teams made only of AI never share),Las IA de tu equipo también comparten la reserva (los equipos solo de IA nunca comparten)
+80,Debug notices,Avisos de depuración
+81,Shows on screen why the pool is or is not created and the state of the buttons,Muestra en pantalla por qué se crea o no la reserva y el estado de los botones
+82,Debug: pool created with %1COUNT% players of your team,Depuración: reserva creada con %1COUNT% jugadores de tu equipo
+83,Debug: your team does not share because it has %1COUNT% players and the maximum is %2MAX%,Depuración: tu equipo no comparte porque tiene %1COUNT% jugadores y el máximo es %2MAX%
+84,Debug: your team does not share because there is only %1COUNT% eligible player (check Include allied AI),Depuración: tu equipo no comparte porque solo hay %1COUNT% jugador elegible (revisa Incluir IA aliada)
+85,Debug: shared resources are disabled in the lobby,Depuración: recursos compartidos desactivados en el lobby
+86,Debug: you are not in any team that shares resources,Depuración: no estás en ningún equipo que comparta recursos
+87,Debug: lock button panel created,Depuración: panel de botones creado
+88,Debug: the lock button panel could not be created,Depuración: no se pudo crear el panel de botones
+89,Debug: the buttons are not available (no network events),Depuración: los botones no están disponibles (sin eventos de red)
+90,Shared max population,Población máxima compartida
+91,The team adds up its max population (for example 400 for two) and each player can use what the others do not,El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use
+92,Shared production,Producción compartida
+93,Allies can produce units and research in your buildings paying with their own resources,Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos
+94,Shared: click to stop sharing it,Compartido: pulsa para dejar de compartirlo
+95,Locked: click to share it again,Bloqueado: pulsa para volver a compartirlo
+96,Lock all,Bloquear todo
+97,Share all,Compartir todo
