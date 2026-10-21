@@ -11,8 +11,12 @@ Partida: tú + IA aliada contra IA.
 - [ ] Compila sin errores (*Build → Build Mod*).
 - [ ] Aparece **Shared Resources (Estándar)** con la imagen nueva y su descripción.
 - [ ] Se ven las cuatro secciones de opciones con sus textos en español; con el juego en inglés, en inglés.
-- [ ] En *Recursos compartidos* aparecen las casillas **Población máxima compartida** y **Producción compartida**, marcadas.
-- [ ] **Población máxima compartida** (tú + IA aliada): tu tope pasa de 200 a más cuando la IA tiene hueco libre (mira el contador de población al llegar a 200).
+- [ ] En *Recursos compartidos* aparecen las casillas **Población compartida** y **Producción compartida**, marcadas.
+- [ ] **Población compartida** (tú + IA aliada):
+  - [ ] encima de los botones sale «Equipo: usada/capacidad» con la suma de los dos;
+  - [ ] tu contador muestra *tus unidades / tus unidades + hueco del equipo*;
+  - [ ] si tu aliado construye una casa, tu capacidad sube (en 1 s como mucho);
+  - [ ] al acercaros a 400 en total, uno puede pasar de 200 si el otro tiene menos.
 - [ ] **Producción compartida:** selecciona un cuartel o el centro urbano de tu aliado IA y comprueba que puedes producir en él.
 - [ ] Con las dos casillas desmarcadas, todo funciona como en el estándar.
 - [ ] Con "Avisos de depuración" activado, al empezar aparece "reserva creada con N jugadores" y "panel de botones creado".
@@ -32,7 +36,7 @@ Partida: tú + IA aliada contra IA.
 
 ## 2. Botones de bloqueo
 
-- [ ] La columna de botones aparece pegada a la derecha del recuadro de recursos, cada botón a la altura de su recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones-junto-a-los-recursos)).
+- [ ] El panel aparece a la izquierda, justo encima del recuadro de recursos, sin tapar ningún icono ni contador, también en mapas con muchos lugares sagrados: «Equipo: X/Y» y debajo una columna de 5 botones cuadrados con el icono de cada recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones)).
 - [ ] Los botones son cuadrados, verdes y con el candado abierto; el de arriba tiene marco dorado. Al pasar el ratón sale "Compartido" o "Bloquear todo".
 - [ ] Clic en oro:
   - [ ] el botón pasa a rojo con el candado cerrado;

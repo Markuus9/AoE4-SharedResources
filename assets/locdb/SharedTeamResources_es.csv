@@ -88,11 +88,12 @@
 87,Debug: lock button panel created,Depuración: panel de botones creado
 88,Debug: the lock button panel could not be created,Depuración: no se pudo crear el panel de botones
 89,Debug: the buttons are not available (no network events),Depuración: los botones no están disponibles (sin eventos de red)
-90,Shared max population,Población máxima compartida
-91,The team adds up its max population (for example 400 for two) and each player can use what the others do not,El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use
+90,Shared population,Población compartida
+91,The team pools its house capacity and its max population (400 for two): anyone can produce while the team has room,El equipo junta la capacidad de sus casas y su población máxima (400 entre dos): cualquiera puede producir mientras quede hueco en el equipo
 92,Shared production,Producción compartida
 93,Allies can produce units and research in your buildings paying with their own resources,Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos
 94,Shared: click to stop sharing it,Compartido: pulsa para dejar de compartirlo
 95,Locked: click to share it again,Bloqueado: pulsa para volver a compartirlo
 96,Lock all,Bloquear todo
 97,Share all,Compartir todo
+98,Team: %1USED%/%2CAP%,Equipo: %1USED%/%2CAP%

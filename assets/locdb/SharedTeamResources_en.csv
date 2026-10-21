@@ -88,11 +88,12 @@
 87,,,Debug cue.,,,Debug: lock button panel created
 88,,,Debug cue.,,,Debug: the lock button panel could not be created
 89,,,Debug cue.,,,Debug: the buttons are not available (no network events)
-90,,,Option name,,,Shared max population
-91,,,Option tooltip,,,The team adds up its max population (for example 400 for two) and each player can use what the others do not
+90,,,Option name,,,Shared population
+91,,,Option tooltip,,,The team pools its house capacity and its max population (400 for two): anyone can produce while the team has room
 92,,,Option name,,,Shared production
 93,,,Option tooltip,,,Allies can produce units and research in your buildings paying with their own resources
 94,,,Button tooltip.,,,Shared: click to stop sharing it
 95,,,Button tooltip.,,,Locked: click to share it again
 96,,,Button tooltip.,,,Lock all
 97,,,Button tooltip.,,,Share all
+98,,,Team population label. %1USED% %2CAP%.,,,Team: %1USED%/%2CAP%

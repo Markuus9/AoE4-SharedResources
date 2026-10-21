@@ -270,9 +270,7 @@ function STR_RemovePlayer(player_id, reason)
 		return
 	end
 	STR_Ledger_RemoveMember(pool, player_id)
-	if pool.pop ~= nil then
-		pool.pop.base[player_id] = nil
-	end
+	STR_Population_RemoveMember(pool, player_id)
 	STR_STATE.pool_of[player_id] = nil
 	STR_LogEvent("Jugador", STR_PlayerLabel(player_id), "sale de", pool.name, "(" .. tostring(reason) .. ")",
 		"saldo:", STR_DescribeBalance(pool))

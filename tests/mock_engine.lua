@@ -73,7 +73,9 @@ function Mock_Reset(spec, scar_root)
 		MOCK.human[id] = (p.human ~= false)
 		-- Población: usada, tope base (lo que fija Player_SetMaxCapPopulation) y
 		-- modificador que el motor suma encima (p. ej. una tecnología).
-		MOCK.pop[id] = { used = p.pop_used or 0, base = p.pop_max or 200, mod = p.pop_mod or 0 }
+		-- houses: capacidad que dan sus casas y centro urbano; override: el que fije el mod.
+		MOCK.pop[id] = { used = p.pop_used or 0, base = p.pop_max or 200, mod = p.pop_mod or 0,
+			houses = p.houses or 10, override = nil }
 		-- Edificios: centro urbano (con cola de producción) y una casa (sin cola).
 		MOCK.entities[id] = {
 			{ type = "town_center", pos = { x = 1, y = 2 }, production = true, shared = false },
@@ -383,6 +385,20 @@ end
 function Player_GetCurrentPopulation(id, cap) return MOCK.pop[id].used end
 function Player_GetMaxPopulationCap(id, cap) return MOCK.pop[id].base + MOCK.pop[id].mod end
 function Player_SetMaxCapPopulation(id, cap, value) MOCK.pop[id].base = value end
+-- Capacidad actual: la del override si hay; si no, la de las casas. Nunca por encima del tope.
+function Player_GetCurrentPopulationCap(id, cap)
+	local p = MOCK.pop[id]
+	local value = p.override or p.houses
+	return math.min(value, p.base + p.mod)
+end
+function Player_SetPopCapOverride(id, value) MOCK.pop[id].override = value end
+function Player_ClearPopCapOverride(id) MOCK.pop[id].override = nil end
+
+-- El jugador n construye una casa (+10 de capacidad).
+function Mock_BuildHouse(n)
+	local p = MOCK.pop[PLAYERS[n].id]
+	p.houses = p.houses + 10
+end
 
 -- Crea un edificio terminado para el jugador n y lanza GE_ConstructionComplete.
 function Mock_Build(n, type_name, has_queue)

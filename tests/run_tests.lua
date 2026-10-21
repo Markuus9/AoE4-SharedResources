@@ -484,7 +484,8 @@ test("UI: el panel se crea solo para el jugador local de la reserva", function()
 	local _, overlays = string.gsub(xaml, 'IsHitTestVisible="False"', "")
 	eq(empty, 5, "5 botones vacíos (fondo + clic)"); eq(overlays, 5, "5 marcos de estado encima")
 	ok(string.find(xaml, 'ToolTip="{Binding [food_text]}"', 1, true), "el texto sale al pasar el ratón")
-	ok(not string.find(xaml, "<TextBlock", 1, true), "los botones ya no llevan texto")
+	local _, textblocks = string.gsub(xaml, "<TextBlock", "")
+	eq(textblocks, 1, "los botones no llevan texto: el único TextBlock es el de la población del equipo")
 	local data = MOCK.ui.STR_LockUI.data
 	ok(data.food_icon == STR_UI.icon_shared, "candado abierto al compartir")
 	ok(data.food_color == STR_UI.color_shared and data.food_tint == STR_UI.tint_shared, "verde al compartir")
@@ -496,9 +497,59 @@ test("UI: el panel se crea solo para el jugador local de la reserva", function()
 	ok(MOCK.ui.STR_LockUI == nil, "un local fuera de la reserva no ve el panel")
 end)
 
-test("UI: columna junto a los recursos (Todos arriba, luego comida-madera-oro-piedra)", function()
+test("UI: por defecto, columna a la izquierda anclada abajo, encima del recuadro de recursos", function()
 	start(coop(100, 100))
 	local xaml = MOCK.ui.STR_LockUI.xaml
+	ok(string.find(xaml, 'HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="22,0,0,250"', 1, true),
+		"anclado abajo a la izquierda (no depende de cuántos iconos haya arriba)")
+	local label = string.find(xaml, "{Binding [team_pop]}", 1, true)
+	local column = string.find(xaml, '<StackPanel Orientation="Vertical" HorizontalAlignment="Left">', 1, true)
+	ok(label and column and label < column, "texto del equipo encima de la columna, que no se estira")
+	local _, squares = string.gsub(xaml, '<Grid Width="30" Height="30" Margin="0,0,0,4" HorizontalAlignment="Left">', "")
+	eq(squares, 4, "4 botones alineados a la izquierda con separación vertical de 4 (el último sin margen)")
+	local _, grids = string.gsub(xaml, "<Grid Width=", "")
+	local _, left = string.gsub(xaml, '<Grid Width="%d+" Height="%d+" Margin="[^"]*" HorizontalAlignment="Left">', "")
+	eq(left, grids, "todos los botones alineados a la izquierda (no centrados bajo el texto)")
+	local order = {}
+	for p in string.gmatch(xaml, 'CommandParameter="([^"]+)"') do order[#order + 1] = p end
+	ok(table.concat(order, ",") == "all,1,2,3,4", "orden de arriba abajo: " .. table.concat(order, ","))
+	ok(string.find(xaml, "{Binding [gold_res]}", 1, true), "con icono de recurso")
+end)
+
+test("UI: disposición 'top': arriba a la izquierda, texto del equipo y fila con icono de cada recurso", function()
+	start(coop(100, 100), { ui = { layout = "top" } })
+	local xaml = MOCK.ui.STR_LockUI.xaml
+	ok(string.find(xaml, 'VerticalAlignment="Top" Margin="70,12,0,0"', 1, true), "arriba a la izquierda")
+	local label = string.find(xaml, "{Binding [team_pop]}", 1, true)
+	local row = string.find(xaml, 'StackPanel Orientation="Horizontal"', 1, true)
+	ok(label and row and label < row, "el texto del equipo va encima de la fila")
+	local _, squares = string.gsub(xaml, '<Grid Width="30" Height="30"', "")
+	eq(squares, 5, "5 botones cuadrados de 30")
+	local order = {}
+	for p in string.gmatch(xaml, 'CommandParameter="([^"]+)"') do order[#order + 1] = p end
+	ok(table.concat(order, ",") == "all,1,2,3,4", "orden: " .. table.concat(order, ","))
+	for _, k in ipairs({ "food", "wood", "gold", "stone" }) do
+		ok(string.find(xaml, "{Binding [" .. k .. "_res]}", 1, true), "icono del recurso " .. k)
+	end
+	ok(not string.find(xaml, "{Binding [all_res]}", 1, true), "Todos no lleva icono de recurso")
+	-- Todas las imágenes caben en su cuadrado (sin márgenes negativos y con Stretch="Uniform").
+	ok(not string.find(xaml, 'Margin="0,0,-', 1, true), "ningún icono se sale por la esquina")
+	for w in string.gmatch(xaml, '<Image[^>]-Width="(%d+)"') do
+		ok(tonumber(w) <= 30 - 4, "icono de " .. w .. " cabe dentro del marco de 30")
+	end
+	local _, uniform = string.gsub(xaml, 'Stretch="Uniform"', "")
+	eq(uniform, 9, "todas las imágenes mantienen su proporción (1 de Todos + 2 por recurso)")
+	local data = MOCK.ui.STR_LockUI.data
+	ok(string.find(data.gold_res, "resource_gold_icon.png", 1, true), "icono oficial del oro")
+	start(coop(100, 100), { ui = { layout = "top", margin = "100,40,0,0", button_size = 26 } })
+	ok(string.find(MOCK.ui.STR_LockUI.xaml, 'Margin="100,40,0,0"', 1, true), "margen configurable")
+	ok(string.find(MOCK.ui.STR_LockUI.xaml, '<Grid Width="26"', 1, true), "tamaño configurable")
+end)
+
+test("UI: columna junto a los recursos (Todos arriba, luego comida-madera-oro-piedra)", function()
+	start(coop(100, 100), { ui = { layout = "column" } })
+	local xaml = MOCK.ui.STR_LockUI.xaml
+	ok(not string.find(xaml, "_res]}", 1, true), "en columna, sin icono de recurso (ya está al lado)")
 	ok(string.find(xaml, 'Orientation="Vertical" SnapsToDevicePixels', 1, true), "columna")
 	ok(string.find(xaml, 'Margin="200,0,0,15"', 1, true), "margen por defecto")
 	local _, squares = string.gsub(xaml, '<Grid Width="35" Height="35"', "")
@@ -609,10 +660,54 @@ test("población: si un aliado es eliminado, el superviviente vuelve a su tope",
 	eq(maxpop(1), 200, "solo su propio tope")
 end)
 
+local function cap(n) return Player_GetCurrentPopulationCap(Mock_Player(n).id, CT_Personnel) end
+
+test("casas: la capacidad de las casas es del equipo", function()
+	start(coop(0, 0))                          -- 10 de capacidad cada uno
+	setused(1, 7); setused(2, 3); Mock_Tick()
+	eq(cap(1), 17, "A: 7 usados + 10 libres del equipo"); eq(cap(2), 13, "B: 3 + 10")
+	eq(cap(3), 10, "la IA enemiga no se toca")
+end)
+
+test("casas: una casa de cualquiera suma al equipo", function()
+	start(coop(0, 0))
+	setused(1, 7); setused(2, 3); Mock_Tick()
+	Mock_BuildHouse(2); Mock_Tick(8)           -- se relee cada 8 ticks
+	eq(cap(1), 27, "A puede usar la casa de B: 7 + 20 libres"); eq(cap(2), 23, "B")
+	ok(MOCK.pop[Mock_Player(1).id].override == 27, "con override")
+	eq(STR_GetPoolForPlayer(Mock_Player(1).id).pop.houses[Mock_Player(1).id], 10,
+		"al releer, las casas de A siguen siendo 10 (el override no se cuela)")
+end)
+
+test("casas: la capacidad del equipo no pasa del tope del equipo", function()
+	start({ { team = 1, houses = 250 }, { team = 1, houses = 250 } })
+	Mock_Tick()
+	eq(cap(1), 400, "min(500, 400)")
+end)
+
+test("casas: el texto del equipo muestra usada/capacidad", function()
+	start(coop(0, 0))
+	setused(1, 7); setused(2, 3); Mock_Tick()
+	ok(MOCK.ui.STR_LockUI.data.team_pop == "Equipo: 10/20", "texto: " .. tostring(MOCK.ui.STR_LockUI.data.team_pop))
+	ok(string.find(MOCK.ui.STR_LockUI.xaml, "{Binding [team_pop]}", 1, true), "texto en el panel")
+	Mock_BuildHouse(1); Mock_Tick(8)
+	ok(MOCK.ui.STR_LockUI.data.team_pop == "Equipo: 10/30", "se actualiza: " .. tostring(MOCK.ui.STR_LockUI.data.team_pop))
+end)
+
+test("casas: si un aliado es eliminado, el superviviente vuelve a sus casas", function()
+	start(coop(0, 0))
+	setused(1, 5); setused(2, 5); Mock_Tick()
+	eq(cap(1), 15, "antes")
+	Mock_Eliminate(2, true); Mock_Tick(8)
+	eq(cap(1), 10, "solo sus casas")
+end)
+
 test("población: con la casilla desactivada no se toca", function()
 	start(coop(0, 0), { share_population = false })
 	setused(1, 100); setused(2, 50); Mock_Tick(3)
 	eq(maxpop(1), 200, "A"); eq(maxpop(2), 200, "B")
+	eq(cap(1), 10, "casas sin compartir"); ok(MOCK.pop[Mock_Player(1).id].override == nil, "sin override")
+	ok(not string.find(MOCK.ui.STR_LockUI.xaml, "team_pop", 1, true), "sin texto de equipo")
 end)
 
 ---------------------------------------------------------------------------------------------------
@@ -818,6 +913,7 @@ end)
 test("modo: los textos de los botones salen del CSV (traducibles)", function()
 	start_game_mode(coop(0, 0), {})
 	local data = MOCK.ui.STR_LockUI.data
+	ok(data.team_pop == LOC(98) .. "|0|20", "texto del equipo: fila 98, es " .. tostring(data.team_pop))
 	ok(data.food_text == LOC(94), "compartido: fila 94, es " .. tostring(data.food_text))
 	ok(data.all_text == LOC(96), "bloquear todo: fila 96")
 	Mock_Click("1"); Mock_Tick()

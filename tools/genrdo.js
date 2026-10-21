@@ -147,14 +147,15 @@ const LATE_ROWS = [
   ['Debug cue.', 'Depuración: no se pudo crear el panel de botones'],
   ['Debug cue.', 'Depuración: los botones no están disponibles (sin eventos de red)'],
   // 90+: población y producción compartidas, y textos de los botones
-  ['Option name', 'Población máxima compartida'],
-  ['Option tooltip', 'El equipo suma su población máxima (por ejemplo 400 entre dos) y cada uno puede usar lo que el otro no use'],
+  ['Option name', 'Población compartida'],
+  ['Option tooltip', 'El equipo junta la capacidad de sus casas y su población máxima (400 entre dos): cualquiera puede producir mientras quede hueco en el equipo'],
   ['Option name', 'Producción compartida'],
   ['Option tooltip', 'Los aliados pueden producir unidades e investigar en tus edificios pagando con sus recursos'],
   ['Button tooltip.', 'Compartido: pulsa para dejar de compartirlo'],
   ['Button tooltip.', 'Bloqueado: pulsa para volver a compartirlo'],
   ['Button tooltip.', 'Bloquear todo'],
   ['Button tooltip.', 'Compartir todo'],
+  ['Team population label. %1USED% %2CAP%.', 'Equipo: %1USED%/%2CAP%'],
 ];
 LATE.POP_NAME = 90; LATE.POP_TIP = 91; LATE.PROD_NAME = 92; LATE.PROD_TIP = 93;
 const secShared = section('shared_section', SECTION_SHARED, true, [
@@ -187,7 +188,7 @@ const secDip = section('section_diplomacy', row('Diplomacia', 'Lobby section.'),
 const sections = [secWin, secShared, secStart, secDip];
 if (rows.length !== 72) throw new Error('filas antes de las tardías: ' + rows.length);
 LATE_ROWS.forEach(function (r) { row(r[1], r[0]); });
-if (rows.length !== 97) throw new Error('filas totales: ' + rows.length);
+if (rows.length !== 98) throw new Error('filas totales: ' + rows.length);
 
 const optionsXml =
   T(2) + '<DataProperty Name="m_optionsUIDescriptor" Type="Object">\n' +

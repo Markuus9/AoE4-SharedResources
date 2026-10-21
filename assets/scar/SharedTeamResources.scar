@@ -169,6 +169,8 @@ function STRGameMode_OnGameSetup()
 		ui_locked = STRGameMode_Loc(95),
 		ui_lock_all = STRGameMode_Loc(96),
 		ui_unlock_all = STRGameMode_Loc(97),
+		-- Población del equipo encima de los botones: %1USED% %2CAP%
+		team_pop = STRGameMode_Loc(98),
 	}
 end
 

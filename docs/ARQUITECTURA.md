@@ -77,7 +77,7 @@ Clic (solo en el ordenador de quien pulsa)
 
 ## Panel de botones (XAML)
 
-[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` una columna de 5 botones:
+[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` un panel con 5 botones. Por defecto (`layout = "left"`) va a la izquierda, anclado abajo justo encima del recuadro de recursos (`VerticalAlignment="Bottom"`). La columna de iconos de las condiciones de victoria crece hacia abajo según el mapa, así que anclarlo abajo evita taparla: el texto «Equipo: X/Y» y debajo una columna. Cada botón de recurso lleva el icono oficial del recurso (`icons/resources/resource_*_icon.png`) y un candado pequeño en la esquina. `layout = "top"` pone la misma fila arriba, a la derecha de los iconos. Con `layout = "column"` va en columna junto al recuadro de recursos de abajo, solo con el candado. Detalles de los botones:
 
 Son **cuadrados** (`STR_CONFIG.ui.button_size`, 35 por defecto):
 
@@ -106,21 +106,31 @@ Cada jugador local ve **su** estado. El panel se actualiza con `UI_SetDataContex
 
 El eliminado sale de la reserva **sin** contar sus cambios del último tick, porque el motor puede vaciar sus recursos. Su aporte pasa al superviviente, que conserva el saldo común y la deuda pendiente.
 
-## Población máxima compartida ([str_team.scar](../assets/scar/sharedteamresources/str_team.scar))
+## Población compartida: casas + tope ([str_team.scar](../assets/scar/sharedteamresources/str_team.scar))
+
+Se comparten dos cosas:
+
+- la **capacidad de las casas**: el `usada/capacidad` del contador;
+- el **tope máximo**: el 200.
 
 Al crear la reserva se guarda el tope inicial de cada miembro (`Player_GetMaxPopulationCap`, normalmente 200). En cada tick:
 
 ```
-tope_equipo = Σ tope_inicial (de los miembros que quedan)
-libre       = max(tope_equipo − Σ usada, 0)
-tope_j      = usada_j + libre
+tope_equipo  = Σ tope_inicial                  (de los miembros que quedan)
+casas_equipo = min(Σ casas_j, tope_equipo)     (casas_j: lo que dan sus casas)
+libre_tope   = max(tope_equipo  − Σ usada, 0)
+libre_casas  = max(casas_equipo − Σ usada, 0)
+tope_j       = usada_j + libre_tope    → Player_SetMaxCapPopulation (compensando modificadores)
+capacidad_j  = usada_j + libre_casas   → Player_SetPopCapOverride
 ```
 
-- Si A usa 100 y B usa 50 (equipo 400), A puede llegar a 350 y B a 300. Cuando uno crece, el hueco del otro se reduce.
-- Solo se mueve el **tope** (`Player_SetMaxCapPopulation`); la capacidad de las casas sigue haciendo falta.
-- El motor suma modificadores encima del valor fijado. La primera vez se mide la diferencia entre lo fijado y lo efectivo, y luego se compensa.
-- Si un miembro es eliminado, su tope deja de contar y el superviviente vuelve a su propio tope.
-- Si dos producen a la vez la última unidad que cabe, el equipo puede pasarse por una unidad (como la deuda de recursos).
+- **Ejemplo:** A usa 7, B usa 3 y cada uno tiene 10 de casas. El equipo tiene 10 de 20, así que A ve 7/17 y B 3/13. Si B hace una casa, el equipo pasa a 30 y A ve 7/27.
+- **Contador del juego:** solo cuenta las unidades propias, así que cada jugador ve *sus unidades / sus unidades + hueco del equipo*. El total aparece en el panel de botones como «Equipo: usada/capacidad» (fila 98 del CSV). Solo se actualiza cuando cambia.
+- **Lectura de las casas:** cada 8 ticks (1 s) se quita un momento el override (`Player_ClearPopCapOverride`), se lee `Player_GetCurrentPopulationCap` y se vuelve a poner, todo en el mismo tick. Por eso una casa nueva tarda hasta 1 s en contar.
+- **Orden:** primero se fija el tope y luego la capacidad, porque la capacidad nunca puede superar el tope (y `libre_tope ≥ libre_casas`).
+- **Modificadores del tope:** el motor los suma encima del valor fijado. La primera vez se mide la diferencia y después se compensa.
+- **Eliminación:** si un miembro es eliminado, su tope y sus casas dejan de contar.
+- **Producción simultánea:** si dos producen a la vez la última unidad que cabe, el equipo puede pasarse por una unidad (como la deuda de recursos).
 
 ## Producción compartida ([str_team.scar](../assets/scar/sharedteamresources/str_team.scar))
 

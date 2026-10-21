@@ -4,13 +4,23 @@
 -- Dos extras opcionales para los miembros de cada reserva (casillas del lobby
 -- "Población máxima compartida" y "Producción compartida"):
 --
--- 1. POBLACIÓN MÁXIMA COMPARTIDA (el tope de 200, no la capacidad de las casas)
---    El equipo suma el tope de todos: 2 jugadores con 200 = 400. En cada tick:
---      libre     = tope_equipo - suma(población usada)
---      tope_j    = usada_j + libre
---    Así cada uno puede crecer hasta donde los demás no llegan: si uno usa 100,
---    el otro puede llegar a 300. Las casas siguen haciendo falta: esto solo
---    mueve el tope máximo (Player_SetMaxCapPopulation), no la capacidad actual.
+-- 1. POBLACIÓN COMPARTIDA (casas + tope máximo)
+--    El equipo junta dos cosas:
+--      * el TOPE MÁXIMO (el 200): 2 jugadores = 400;
+--      * la CAPACIDAD DE LAS CASAS: cada casa de cualquiera suma al equipo.
+--    En cada tick:
+--      casas_equipo = min(suma(casas_j), tope_equipo)
+--      libre_casas  = casas_equipo - suma(usada_j)
+--      libre_tope   = tope_equipo  - suma(usada_j)
+--      capacidad_j  = usada_j + libre_casas     (Player_SetPopCapOverride)
+--      tope_j       = usada_j + libre_tope      (Player_SetMaxCapPopulation)
+--    Así cualquiera puede producir mientras quede hueco en el EQUIPO, y si uno
+--    hace una casa el hueco crece para todos.
+--    El contador del juego (usada/capacidad) solo cuenta TUS unidades: verás
+--    "tus unidades / tus unidades + hueco del equipo". El total del equipo se
+--    muestra encima de los botones de bloqueo ("Equipo: 17/40").
+--    Lo que dan las casas de cada jugador se lee quitando un momento el
+--    override (Player_ClearPopCapOverride) una vez por segundo.
 --    Si dos jugadores producen a la vez la última unidad que cabe, el equipo
 --    puede pasarse en esa unidad (igual que la deuda de recursos).
 --
@@ -27,18 +37,26 @@
 STR_TEAM = {
 	production_rule_interval = 15,   -- segundos entre repasos de edificios
 	production_started = false,
+	houses_refresh_ticks = 8,        -- cada cuántos ticks se vuelve a leer lo que dan las casas
 }
 
 ---------------------------------------------------------------------------------------------------
--- Población máxima compartida
+-- Población compartida (casas + tope máximo)
 ---------------------------------------------------------------------------------------------------
 
 -- Guarda el tope inicial de cada miembro. Se llama al crear la reserva.
 function STR_Population_Init(pool)
-	pool.pop = { base = {}, offset = {} }
+	pool.pop = {
+		base = {},       -- tope máximo inicial de cada miembro (normalmente 200)
+		offset = {},     -- diferencia entre lo que fijamos y el tope efectivo (modificadores)
+		houses = {},     -- capacidad que dan las casas de cada miembro (sin override)
+		override = {},   -- capacidad que le hemos fijado con el override
+		ticks = 0,
+		team_used = 0, team_cap = 0, team_max = 0,
+	}
 	for _, id in ipairs(pool.members) do
 		pool.pop.base[id] = Player_GetMaxPopulationCap(id, CT_Personnel)
-		pool.pop.offset[id] = nil   -- diferencia entre lo que fijamos y lo efectivo (modificadores)
+		pool.pop.houses[id] = Player_GetCurrentPopulationCap(id, CT_Personnel)
 	end
 end
 
@@ -51,16 +69,23 @@ function STR_Population_TeamMax(pool)
 	return total
 end
 
--- Calcula el tope que debe tener cada miembro (lógica pura, testeable).
---   used = { [id] = población usada }
--- Devuelve { [id] = tope }.
-function STR_Population_Targets(pool, used)
-	local team_max = STR_Population_TeamMax(pool)
+-- Capacidad de las casas del equipo: suma de las de los miembros, sin pasar del tope.
+function STR_Population_TeamHouses(pool)
+	local total = 0
+	for _, id in ipairs(pool.members) do
+		total = total + (pool.pop.houses[id] or 0)
+	end
+	return math.min(total, STR_Population_TeamMax(pool))
+end
+
+-- Reparte un total entre los miembros: cada uno = lo que usa + el hueco libre
+-- del equipo (lógica pura, testeable). used = { [id] = población usada }.
+function STR_Population_Split(pool, used, total)
 	local total_used = 0
 	for _, id in ipairs(pool.members) do
 		total_used = total_used + (used[id] or 0)
 	end
-	local free = team_max - total_used
+	local free = total - total_used
 	if free < 0 then
 		free = 0
 	end
@@ -68,7 +93,24 @@ function STR_Population_Targets(pool, used)
 	for _, id in ipairs(pool.members) do
 		targets[id] = math.floor((used[id] or 0) + free)
 	end
-	return targets
+	return targets, total_used
+end
+
+-- Topes máximos de cada miembro (se mantiene por compatibilidad con las pruebas).
+function STR_Population_Targets(pool, used)
+	return (STR_Population_Split(pool, used, STR_Population_TeamMax(pool)))
+end
+
+-- Lee lo que dan las casas de un jugador: quita el override un momento, lee y
+-- vuelve a ponerlo. Todo en el mismo tick de simulación.
+local function STR_Population_ReadHouses(pool, id)
+	if pool.pop.override[id] ~= nil then
+		Player_ClearPopCapOverride(id)
+	end
+	pool.pop.houses[id] = Player_GetCurrentPopulationCap(id, CT_Personnel)
+	if pool.pop.override[id] ~= nil then
+		Player_SetPopCapOverride(id, pool.pop.override[id])
+	end
 end
 
 -- Fija el tope efectivo de un jugador. Player_SetMaxCapPopulation aplica los
@@ -91,16 +133,52 @@ function STR_Population_Sync(pool)
 	if pool.pop == nil or #pool.members == 0 then
 		return
 	end
+	-- Lo que dan las casas cambia poco (al construir o perder casas): se relee
+	-- cada houses_refresh_ticks ticks.
+	pool.pop.ticks = pool.pop.ticks + 1
+	if pool.pop.ticks % STR_TEAM.houses_refresh_ticks == 1 then
+		for _, id in ipairs(pool.members) do
+			STR_Population_ReadHouses(pool, id)
+		end
+	end
+
 	local used = {}
 	for _, id in ipairs(pool.members) do
 		used[id] = Player_GetCurrentPopulation(id, CT_Personnel)
 	end
-	local targets = STR_Population_Targets(pool, used)
+	local team_max = STR_Population_TeamMax(pool)
+	local team_cap = STR_Population_TeamHouses(pool)
+	local max_targets, team_used = STR_Population_Split(pool, used, team_max)
+	local cap_targets = STR_Population_Split(pool, used, team_cap)
+
 	for _, id in ipairs(pool.members) do
-		if Player_GetMaxPopulationCap(id, CT_Personnel) ~= targets[id] then
-			STR_Population_Apply(pool, id, targets[id])
+		-- Primero el tope (siempre >= capacidad), luego la capacidad.
+		if Player_GetMaxPopulationCap(id, CT_Personnel) ~= max_targets[id] then
+			STR_Population_Apply(pool, id, max_targets[id])
+		end
+		if pool.pop.override[id] ~= cap_targets[id] then
+			Player_SetPopCapOverride(id, cap_targets[id])
+			pool.pop.override[id] = cap_targets[id]
 		end
 	end
+
+	-- Totales del equipo para el texto de la interfaz.
+	if pool.pop.team_used ~= team_used or pool.pop.team_cap ~= team_cap or pool.pop.team_max ~= team_max then
+		pool.pop.team_used = team_used
+		pool.pop.team_cap = team_cap
+		pool.pop.team_max = team_max
+		STR_UI_RefreshPopulation(pool)
+	end
+end
+
+-- Al eliminar a un miembro se deja de contar su tope y sus casas.
+function STR_Population_RemoveMember(pool, id)
+	if pool.pop == nil then
+		return
+	end
+	pool.pop.base[id] = nil
+	pool.pop.houses[id] = nil
+	pool.pop.override[id] = nil
 end
 
 ---------------------------------------------------------------------------------------------------

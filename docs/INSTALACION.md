@@ -29,25 +29,31 @@ La fuente está en [tools/imagen/mod.html](../tools/imagen/mod.html). La cabecer
 
    Los mensajes de `print()` (líneas `[STR]`) **no se ven** en la versión normal del juego: no llegan a `warnings.log` ni hay consola. Por eso existen estos avisos.
 
-### Colocar los botones junto a los recursos
+### Colocar los botones
 
-Por defecto es una **columna de botones cuadrados pegada a la derecha del recuadro de recursos** (abajo a la izquierda): "Todos" (marco dorado) a la altura de la población y debajo un botón a la altura de comida, madera, oro y piedra. Verde y candado abierto = compartiendo; rojo y candado cerrado = bloqueado. Las medidas salen de una captura a 1080p con la escala de interfaz normal. Si con tu resolución o escala no cuadra, edita `STR_CONFIG.ui` en [str_config.scar](../assets/scar/sharedteamresources/str_config.scar):
+Por defecto (`layout = "left"`), el panel va **a la izquierda, alineado con los iconos del juego y anclado abajo, justo encima del recuadro de población y recursos**. Así no tapa los contadores de maravilla, edificios distintivos y lugares sagrados, y no le afecta cuántos iconos haya arriba (crecen hacia abajo según el mapa):
+
+- arriba, el texto «Equipo: usada/capacidad»;
+- debajo, una columna de botones cuadrados: «Todos» (marco dorado) y comida, madera, oro y piedra, cada uno con el icono del recurso y un candado pequeño;
+- verde con candado abierto = compartiendo; rojo con candado cerrado = bloqueado.
+
+El último número de `margin` es la distancia desde abajo: súbelo si el panel toca el recuadro de recursos y bájalo para acercarlo.
+
+Las medidas salen de una captura a 1080p con la escala de interfaz normal. Si con tu resolución o escala no cuadra, edita `STR_CONFIG.ui` en [str_config.scar](../assets/scar/sharedteamresources/str_config.scar). Solo hace falta escribir lo que quieras cambiar:
 
 ```lua
 ui = {
-	layout = "column",       -- column (junto a cada recurso) | row (en fila)
-	horizontal = "Left",     -- Left | Center | Right
-	vertical = "Bottom",     -- Top | Center | Bottom
-	margin = "200,0,0,15",   -- izquierda, arriba, derecha, abajo (píxeles)
-	row_height = 39,         -- separación entre recursos
-	button_size = 35,        -- lado de cada botón cuadrado
+	layout = "left",         -- left (debajo de los iconos) | top (fila arriba) | column (junto a los recursos) | row
+	margin = "22,0,0,250",   -- izquierda, arriba, derecha, abajo (píxeles)
+	button_size = 30,        -- lado de cada botón cuadrado
 },
 ```
 
-- Columna demasiado a la izquierda/derecha: cambia el primer número de `margin`.
-- Botones desplazados hacia arriba/abajo respecto a los recursos: cambia el último número de `margin`.
-- Botones más juntos o separados que los recursos: cambia `row_height`.
-- Botones más grandes o más pequeños: cambia `button_size` (debe ser menor que `row_height`).
+- Panel demasiado a la izquierda/derecha: cambia el primer número de `margin`.
+- Panel demasiado arriba/abajo: cambia el último número de `margin` (distancia desde abajo).
+- Para la fila arriba, a la derecha de los iconos: `layout = "top"` (por defecto `margin = "70,12,0,0"`). Ojo: ahí salen los contadores de maravilla y similares.
+- Botones más grandes o más pequeños: cambia `button_size`.
+- Para la columna junto al recuadro de recursos de abajo: `layout = "column"`. Sus valores por defecto son `margin = "200,0,0,15"`, `row_height = 39` y `button_size = 35`.
 
 Vuelve a compilar después de cada cambio. Si me mandas una captura, te calculo los valores.
 

@@ -44,13 +44,19 @@ Marca la última columna cuando lo compruebes en el juego.
 | `Player_GetCurrentPopulation(id, CT_Personnel)` | Población usada | Doc oficial + scripts oficiales | [ ] |
 | `Player_GetMaxPopulationCap(id, CT_Personnel)` | Tope efectivo (incluye modificadores) | Doc oficial | [ ] |
 | `Player_SetMaxCapPopulation(id, CT_Personnel, n)` | Fija el tope máximo (no la capacidad de las casas); los modificadores se suman encima, y el mod lo compensa | Doc oficial (`player.scar`) | [ ] |
+| `Player_GetCurrentPopulationCap(id, CT_Personnel)` | Capacidad actual (casas) | Doc oficial + scripts oficiales | [ ] |
+| `Player_SetPopCapOverride(id, n)` | Fija la capacidad actual ignorando los modificadores de las casas | Doc oficial + truco oficial (`CheatSetCurrentPopCapToMax`) | [ ] |
+| `Player_ClearPopCapOverride(id)` | Quitarlo un momento para leer lo que dan las casas | Doc oficial | [ ] |
 | `Entity_SetSharedProductionQueue(entity, true)` | "Producción compartida en un edificio: los aliados producen con SUS recursos" | Doc oficial | [ ] |
 | `Entity_HasProductionQueue(entity)` | Solo edificios con cola | Doc oficial + `standard_mode.scar` | [ ] |
 | `EGroup_ForEach(eg, f(grupo, índice, entidad))` | Recorrer edificios | Doc oficial | [ ] |
 | `GE_ConstructionComplete` con `context.player` y `context.entity` | Compartir edificios nuevos | `standard_mode.scar` | [ ] |
 | `Rule_RemoveGlobalEvent(f)` | Quitar el evento al acabar | Plantilla | [ ] |
 
-**Por verificar en el juego:** que al subir el tope por encima de 200, la capacidad de las casas pueda crecer hasta él sin llamar a `Player_SetMaxPopulation`. La documentación avisa de que "la capacidad actual no puede superar el tope", pero no dice si sube sola.
+**Por verificar en el juego:**
+
+1. Que, tras `Player_ClearPopCapOverride`, `Player_GetCurrentPopulationCap` devuelva en el mismo tick lo que dan las casas.
+2. Que el override por encima de 200 funcione cuando el tope se ha subido con `Player_SetMaxCapPopulation`.
 
 ## Recursos y aldeanos iniciales
 
