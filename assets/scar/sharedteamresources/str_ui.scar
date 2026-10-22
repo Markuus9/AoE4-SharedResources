@@ -64,20 +64,16 @@ STR_UI = {
 
 -- Disposiciones:
 --   "left"   -> (por defecto) a la izquierda, alineado con los iconos del juego
---               y anclado ABAJO, justo encima del recuadro de recursos: no tapa
---               los contadores de maravilla, edificios, etc., y no le afecta
---               cuántos iconos haya arriba. Texto del equipo y debajo una
---               columna con "Todos" y los 4 recursos.
+--               y centrado en vertical en el lateral. Texto del equipo y debajo
+--               una columna con "Todos" y los 4 recursos.
 --   "top"    -> arriba a la izquierda, a la derecha de los iconos: texto del
 --               equipo y debajo una fila con "Todos" y los 4 recursos.
 --   "column" -> columna pegada al recuadro de recursos de abajo a la izquierda,
 --               un botón a la altura de cada recurso (solo candado).
 --   "row"    -> una fila suelta (icono del recurso + candado pequeño).
 local STR_UI_DEFAULTS = {
-	-- Anclado ABAJO, justo encima del recuadro de población y recursos: la columna
-	-- de iconos de arriba crece hacia abajo según el mapa (más lugares sagrados,
-	-- más condiciones de victoria...) y así nunca la alcanza.
-	left = { horizontal = "Left", vertical = "Bottom", margin = "22,0,0,250", row_height = 34, button_size = 30 },
+	-- Centrado en vertical en el lateral izquierdo.
+	left = { horizontal = "Left", vertical = "Center", margin = "22,0,0,0", row_height = 34, button_size = 30 },
 	top = { horizontal = "Left", vertical = "Top", margin = "70,12,0,0", row_height = 34, button_size = 30 },
 	column = { horizontal = "Left", vertical = "Bottom", margin = "200,0,0,15", row_height = 39, button_size = 35 },
 	row = { horizontal = "Left", vertical = "Bottom", margin = "12,0,0,300", row_height = 39, button_size = 35 },

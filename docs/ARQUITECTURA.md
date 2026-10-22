@@ -77,7 +77,7 @@ Clic (solo en el ordenador de quien pulsa)
 
 ## Panel de botones (XAML)
 
-[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` un panel con 5 botones. Por defecto (`layout = "left"`) va a la izquierda, anclado abajo justo encima del recuadro de recursos (`VerticalAlignment="Bottom"`). La columna de iconos de las condiciones de victoria crece hacia abajo según el mapa, así que anclarlo abajo evita taparla: el texto «Equipo: X/Y» y debajo una columna. Cada botón de recurso lleva el icono oficial del recurso (`icons/resources/resource_*_icon.png`) y un candado pequeño en la esquina. `layout = "top"` pone la misma fila arriba, a la derecha de los iconos. Con `layout = "column"` va en columna junto al recuadro de recursos de abajo, solo con el candado. Detalles de los botones:
+[str_ui.scar](../assets/scar/sharedteamresources/str_ui.scar) crea con `UI_AddChild("ScarDefault", "XamlPresenter", …)` un panel con 5 botones. Por defecto (`layout = "left"`) va a la izquierda, centrado en vertical en el lateral (`VerticalAlignment="Center"`): el texto «Equipo: X/Y» y debajo una columna. Cada botón de recurso lleva el icono oficial del recurso (`icons/resources/resource_*_icon.png`) y un candado pequeño en la esquina. `layout = "top"` pone la misma fila arriba, a la derecha de los iconos. Con `layout = "column"` va en columna junto al recuadro de recursos de abajo, solo con el candado. Detalles de los botones:
 
 Son **cuadrados** (`STR_CONFIG.ui.button_size`, 35 por defecto):
 

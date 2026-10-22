@@ -22,7 +22,7 @@ Las victorias, la edad, la velocidad, el mapa y la diplomacia los gestiona el pr
 **En la partida**
 
 - Una reserva común por equipo. Todo lo que recolecta o gasta cualquiera de los que comparten sale de ella.
-- Un panel **a la izquierda, justo encima del recuadro de recursos**, alineado con los iconos del juego. No tapa los contadores de maravilla y demás, sea cual sea el mapa. Lleva el texto «Equipo: usada/capacidad» y debajo una columna de **botones cuadrados**, uno por recurso, con su icono y un candado pequeño. También se puede poner en fila arriba o junto al recuadro de recursos. Verde con el candado abierto significa que compartes; rojo con el candado cerrado, que lo tienes bloqueado. El texto aparece al pasar el ratón. Cada jugador ve y controla **solo su propio estado**.
+- Un panel **a la izquierda, centrado en vertical en el lateral**, alineado con los iconos del juego. Lleva el texto «Equipo: usada/capacidad» y debajo una columna de **botones cuadrados**, uno por recurso, con su icono y un candado pequeño. También se puede poner en fila arriba o junto al recuadro de recursos. Verde con el candado abierto significa que compartes; rojo con el candado cerrado, que lo tienes bloqueado. El texto aparece al pasar el ratón. Cada jugador ve y controla **solo su propio estado**.
 - Un botón con marco dorado encima (**Bloquear todo / Compartir todo**) para todos tus recursos a la vez.
 - Al dejar de compartir, te llevas **tu parte según lo que aportaste**: lo recolectado menos lo gastado, incluidos los recursos iniciales. **Nunca más de lo que aportaste.** Si gastaste más de lo que aportaste, no te llevas nada.
 - Los demás siguen compartiendo lo que queda. Con 3 o 4 jugadores, si uno se sale, los otros siguen juntos.

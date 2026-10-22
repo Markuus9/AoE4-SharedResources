@@ -31,26 +31,26 @@ La fuente está en [tools/imagen/mod.html](../tools/imagen/mod.html). La cabecer
 
 ### Colocar los botones
 
-Por defecto (`layout = "left"`), el panel va **a la izquierda, alineado con los iconos del juego y anclado abajo, justo encima del recuadro de población y recursos**. Así no tapa los contadores de maravilla, edificios distintivos y lugares sagrados, y no le afecta cuántos iconos haya arriba (crecen hacia abajo según el mapa):
+Por defecto (`layout = "left"`), el panel va **a la izquierda, alineado con los iconos del juego y centrado en vertical en el lateral de la pantalla**:
 
 - arriba, el texto «Equipo: usada/capacidad»;
 - debajo, una columna de botones cuadrados: «Todos» (marco dorado) y comida, madera, oro y piedra, cada uno con el icono del recurso y un candado pequeño;
 - verde con candado abierto = compartiendo; rojo con candado cerrado = bloqueado.
 
-El último número de `margin` es la distancia desde abajo: súbelo si el panel toca el recuadro de recursos y bájalo para acercarlo.
+Para moverlo un poco respecto al centro: `margin = "22,N,0,0"` lo baja N píxeles y `margin = "22,0,0,N"` lo sube N píxeles.
 
 Las medidas salen de una captura a 1080p con la escala de interfaz normal. Si con tu resolución o escala no cuadra, edita `STR_CONFIG.ui` en [str_config.scar](../assets/scar/sharedteamresources/str_config.scar). Solo hace falta escribir lo que quieras cambiar:
 
 ```lua
 ui = {
-	layout = "left",         -- left (debajo de los iconos) | top (fila arriba) | column (junto a los recursos) | row
-	margin = "22,0,0,250",   -- izquierda, arriba, derecha, abajo (píxeles)
+	layout = "left",         -- left (centrado en el lateral) | top (fila arriba) | column (junto a los recursos) | row
+	margin = "22,0,0,0",     -- izquierda, arriba, derecha, abajo (píxeles)
 	button_size = 30,        -- lado de cada botón cuadrado
 },
 ```
 
 - Panel demasiado a la izquierda/derecha: cambia el primer número de `margin`.
-- Panel demasiado arriba/abajo: cambia el último número de `margin` (distancia desde abajo).
+- Panel demasiado arriba/abajo: usa el segundo número de `margin` para bajarlo o el último para subirlo.
 - Para la fila arriba, a la derecha de los iconos: `layout = "top"` (por defecto `margin = "70,12,0,0"`). Ojo: ahí salen los contadores de maravilla y similares.
 - Botones más grandes o más pequeños: cambia `button_size`.
 - Para la columna junto al recuadro de recursos de abajo: `layout = "column"`. Sus valores por defecto son `margin = "200,0,0,15"`, `row_height = 39` y `button_size = 35`.

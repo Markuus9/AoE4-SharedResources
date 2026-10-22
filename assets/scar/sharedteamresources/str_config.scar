@@ -71,14 +71,13 @@ STR_CONFIG = {
 	-- cerrado = bloqueado. El de marco dorado es "Todos".
 	--
 	-- Disposiciones (layout):
-	--   "left"   -> a la izquierda, alineado con los iconos del juego y anclado
-	--               ABAJO, justo encima del recuadro de población y recursos: no
-	--               tapa los contadores de maravilla, edificios distintivos, etc.,
-	--               ni le afecta cuántos iconos haya arriba según el mapa. Texto
-	--               "Equipo: X/Y" y debajo una columna con Todos + los 4 recursos
-	--               (cada uno con el icono del recurso y un candado pequeño).
-	--               Por defecto: margin "22,0,0,250" (el 250 es la distancia
-	--               desde abajo), button_size 30.
+	--   "left"   -> a la izquierda, alineado con los iconos del juego y
+	--               CENTRADO en vertical en el lateral. Texto "Equipo: X/Y" y
+	--               debajo una columna con Todos + los 4 recursos (cada uno con
+	--               el icono del recurso y un candado pequeño).
+	--               Por defecto: margin "22,0,0,0", button_size 30. Para moverlo
+	--               un poco desde el centro: "22,N,0,0" lo baja N píxeles y
+	--               "22,0,0,N" lo sube N píxeles.
 	--   "top"    -> la misma fila arriba a la izquierda, a la derecha de los
 	--               iconos. Por defecto: margin "70,12,0,0", button_size 30.
 	--   "column" -> columna pegada al recuadro de recursos de abajo a la
@@ -89,7 +88,7 @@ STR_CONFIG = {
 	-- de la disposición elegida (str_ui.scar, STR_UI_DEFAULTS).
 	ui = {
 		layout = "left",
-		-- margin = "22,0,0,250",  -- izquierda, arriba, derecha, abajo (píxeles)
+		-- margin = "22,0,0,0",  -- izquierda, arriba, derecha, abajo (píxeles)
 		-- button_size = 30,
 	},
 

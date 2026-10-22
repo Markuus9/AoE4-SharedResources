@@ -36,7 +36,7 @@ Partida: tú + IA aliada contra IA.
 
 ## 2. Botones de bloqueo
 
-- [ ] El panel aparece a la izquierda, justo encima del recuadro de recursos, sin tapar ningún icono ni contador, también en mapas con muchos lugares sagrados: «Equipo: X/Y» y debajo una columna de 5 botones cuadrados con el icono de cada recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones)).
+- [ ] El panel aparece a la izquierda, centrado en vertical en el lateral, sin tapar ningún icono ni contador, también en mapas con muchos lugares sagrados: «Equipo: X/Y» y debajo una columna de 5 botones cuadrados con el icono de cada recurso. Si no, ajusta `STR_CONFIG.ui` (ver [INSTALACION.md](INSTALACION.md#colocar-los-botones)).
 - [ ] Los botones son cuadrados, verdes y con el candado abierto; el de arriba tiene marco dorado. Al pasar el ratón sale "Compartido" o "Bloquear todo".
 - [ ] Clic en oro:
   - [ ] el botón pasa a rojo con el candado cerrado;

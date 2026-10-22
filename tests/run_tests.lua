@@ -497,11 +497,11 @@ test("UI: el panel se crea solo para el jugador local de la reserva", function()
 	ok(MOCK.ui.STR_LockUI == nil, "un local fuera de la reserva no ve el panel")
 end)
 
-test("UI: por defecto, columna a la izquierda anclada abajo, encima del recuadro de recursos", function()
+test("UI: por defecto, columna a la izquierda centrada en vertical", function()
 	start(coop(100, 100))
 	local xaml = MOCK.ui.STR_LockUI.xaml
-	ok(string.find(xaml, 'HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="22,0,0,250"', 1, true),
-		"anclado abajo a la izquierda (no depende de cuántos iconos haya arriba)")
+	ok(string.find(xaml, 'HorizontalAlignment="Left" VerticalAlignment="Center" Margin="22,0,0,0"', 1, true),
+		"centrado en el lateral izquierdo")
 	local label = string.find(xaml, "{Binding [team_pop]}", 1, true)
 	local column = string.find(xaml, '<StackPanel Orientation="Vertical" HorizontalAlignment="Left">', 1, true)
 	ok(label and column and label < column, "texto del equipo encima de la columna, que no se estira")
